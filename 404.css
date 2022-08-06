@@ -1,0 +1,61 @@
+._404 {
+  position: relative;
+  color: black;
+  font-size: 100px;
+  text-align: center;
+  top: 200px;
+  animation: jump_404 3s;
+}
+.text1 {
+  position: relative;
+  color: black;
+  text-align: center;
+  font-size: 60px;
+  top: 200px;
+  animation: jump_text1 5s;
+}
+#link1 {
+  color: gold;
+  text-decoration: none;
+}
+#link2 {
+  color: gold;
+  text-decoration: none;
+}
+.text2 {
+  text-align: center;
+  position: relative;
+  animation: jump_text2 5s;
+  bottom: -200px;
+}
+@keyframes jump_404 {
+  0% {
+    color: white;
+  }
+  100% {
+    color: black;
+  }
+}
+
+@keyframes jump_text1 {
+  0% {
+    color: white;
+  }
+  30% {
+    color: white;
+  }
+  100% {
+    color: black;
+  }
+}
+
+@keyframes jump_text2 {
+  0% {
+    bottom: -900px;
+    color: white;
+  }
+  100% {
+    bottom: -200px;
+    color: black;
+  }
+}
