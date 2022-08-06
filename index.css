@@ -1,0 +1,52 @@
+.ground {
+  width: 1900px;
+  height: 950px;
+  position: relative;
+}
+body {
+  background-color: bisque;
+}
+.imgfirst {
+  left: 1000px;
+  bottom: 180px;
+  width: 800px;
+  height: 701px;
+  position: absolute;
+  color: white;
+  animation: love1 0.8s infinite ease-in-out;
+}
+
+.Iloveyou {
+  width: 700px;
+  height: 650px;
+  left: 250px;
+  bottom: 300px;
+  position: absolute;
+  animation: Iloveyou 5s;
+}
+
+@keyframes Iloveyou {
+  0% {
+    width: 0px;
+    height: 0px;
+  }
+  100% {
+    width: 700px;
+    height: 650px;
+  }
+}
+
+@keyframes love1 {
+  0% {
+    width: 800px;
+    height: 701px;
+  }
+  50% {
+    width: 850px;
+    height: 751px;
+  }
+  100% {
+    width: 800px;
+    height: 701px;
+  }
+}
