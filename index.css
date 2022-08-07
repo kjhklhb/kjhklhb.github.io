@@ -8,9 +8,6 @@ body {
 a {
   text-decoration: none;
   position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
   font-size: 24px;
   background: linear-gradient(90deg, #03a9f4, #f441a5, #ffeb3b, #03a9f4);
   background-size: 400%;
@@ -46,4 +43,55 @@ a:hover {
   100% {
     background-position: -400% 0;
   }
+}
+.left_Pages::before {
+  content: " ";
+  position: absolute;
+  left: -5px;
+  right: -5px;
+  top: -5px;
+  bottom: -5px;
+  background: linear-gradient(90deg, #03a9f4, #f441a5, #ffeb3b, #03a9f4);
+  background-size: 400%;
+  border-radius: 10px;
+  filter: blur(60px);
+  z-index: -1;
+  animation: sun 20s infinite;
+}
+.left_Pages {
+  position: absolute;
+  background: linear-gradient(90deg, #03a9f4, #f441a5, #ffeb3b, #03a9f4);
+  background-size: 400%;
+  width: 350px;
+  height: 940px;
+  border-radius: 10px;
+  top: 10px;
+  left: 10px;
+  text-align: center;
+  color: #fff;
+  font-size: 50px;
+  line-height: 150px;
+}
+
+#Dividing_Line1 {
+  position: relative;
+  background: linear-gradient(90deg, yellow, red);
+  background-size: 130%;
+  height: 2px;
+  width: 330px;
+  top: 135px;
+  left: 20px;
+}
+
+#bottom1 {
+  left: 400px;
+  top: 10px;
+}
+
+#text1 {
+  position: relative;
+  color: #fff;
+  top: 250px;
+  left: 22px;
+  font-size: 17px;
 }
