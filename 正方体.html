@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>立体几何模拟 - 过直线n作平面与β垂直/平行</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --panel-bg: #16213e;
+            --text: #e0e0e0;
+            --accent: #4da6ff;
+            --accent2: #ff6b6b;
+            --green: #4cff88;
+            --yellow: #ffcc33;
+            --purple: #b066ff;
+            --slider-track: #2a3a55;
+            --border: #2a3a55;
+            --btn-bg: #1e3a5f;
+            --btn-hover: #2a5090;
+            --btn-active: #3a6ad4;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #app-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+        }
+
+        #canvas-wrapper {
+            flex: 1;
+            min-width: 0;
+            position: relative;
+            cursor: grab;
+            background: radial-gradient(ellipse at center, #1e2a3a 0%, #0d1117 100%);
+        }
+        #canvas-wrapper:active {
+            cursor: grabbing;
+        }
+        #canvas-wrapper canvas {
+            display: block;
+        }
+
+        #panel {
+            width: 380px;
+            min-width: 380px;
+            background: var(--panel-bg);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            z-index: 10;
+            padding: 20px 18px;
+            gap: 16px;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.4);
+        }
+
+        #panel h2 {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #fff;
+            text-align: center;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+        #panel .subtitle {
+            font-size: 0.8em;
+            color: #8899bb;
+            text-align: center;
+            margin-top: -8px;
+        }
+
+        .section-label {
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #8899bb;
+            margin-bottom: -8px;
+            font-weight: 600;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .btn-group button {
+            flex: 1;
+            min-width: 55px;
+            padding: 10px 8px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: var(--btn-bg);
+            color: #ccc;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: all 0.2s;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+        .btn-group button:hover {
+            background: var(--btn-hover);
+            border-color: #5588cc;
+            color: #fff;
+        }
+        .btn-group button.active {
+            background: var(--btn-active);
+            border-color: #6699ee;
+            color: #fff;
+            box-shadow: 0 0 16px rgba(60, 120, 220, 0.4);
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .slider-group .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+        .slider-group .slider-header .val {
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 0.9em;
+            min-width: 40px;
+            text-align: right;
+        }
+        .slider-group input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: var(--slider-track);
+            outline: none;
+            cursor: pointer;
+        }
+        .slider-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid var(--accent);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(77, 166, 255, 0.5);
+        }
+
+        .indicator-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .indicator-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+            box-shadow: 0 0 8px currentColor;
+        }
+        .indicator-dot.green {
+            background: #4cff88;
+            box-shadow: 0 0 12px #4cff88;
+        }
+        .indicator-dot.yellow {
+            background: #ffcc33;
+            box-shadow: 0 0 12px #ffcc33;
+        }
+        .indicator-dot.purple {
+            background: #b066ff;
+            box-shadow: 0 0 12px #b066ff;
+        }
+        .indicator-text {
+            font-size: 0.82em;
+            font-weight: 500;
+        }
+        .highlight-box {
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.9em;
+            text-align: center;
+            letter-spacing: 0.5px;
+            transition: all 0.3s;
+        }
+        .highlight-box.perp {
+            background: rgba(76, 255, 136, 0.15);
+            border: 2px solid #4cff88;
+            color: #4cff88;
+        }
+        .highlight-box.parallel {
+            background: rgba(176, 102, 255, 0.15);
+            border: 2px solid #b066ff;
+            color: #b066ff;
+        }
+        .highlight-box.none {
+            background: rgba(255, 200, 50, 0.1);
+            border: 2px solid #ffcc33;
+            color: #ffcc33;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-size: 0.8em;
+            line-height: 1.55;
+            border: 1px solid var(--border);
+            color: #bcc8dd;
+        }
+        .info-card strong {
+            color: #fff;
+        }
+        .info-card .correct {
+            color: #4cff88;
+            font-weight: 700;
+        }
+        .info-card .wrong {
+            color: #ff6b6b;
+            font-weight: 700;
+        }
+
+        .legend-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 0.75em;
+            align-items: center;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .legend-swatch {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 800px) {
+            #app-container {
+                flex-direction: column;
+            }
+            #panel {
+                width: 100%;
+                min-width: 0;
+                max-height: 46vh;
+                border-left: none;
+                border-top: 1px solid var(--border);
+                padding: 14px 12px;
+                gap: 10px;
+                box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+            }
+            #canvas-wrapper {
+                flex: 1;
+                min-height: 300px;
+            }
+            #panel h2 {
+                font-size: 1.1em;
+            }
+            .btn-group button {
+                font-size: 0.75em;
+                padding: 8px 5px;
+            }
+            .slider-group {
+                gap: 2px;
+            }
+            .info-card {
+                font-size: 0.72em;
+                padding: 8px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <div id="canvas-wrapper"></div>
+        <div id="panel">
+            <h2>📐 立体几何模拟</h2>
+            <p class="subtitle">m⊥n &nbsp;|&nbsp; α//β &nbsp;|&nbsp; 过n作平面γ绕n旋转</p>
+
+            <div class="section-label">🔽 选择条件（选项）</div>
+            <div class="btn-group" id="condition-btns">
+                <button data-cond="A">选项 A<br><small>m // α</small></button>
+                <button data-cond="B">选项 B<br><small>m与α成60°</small></button>
+                <button data-cond="C" class="active">选项 C<br><small>m ⊥ α</small></button>
+            </div>
+
+            <div class="section-label">🎚️ 旋转过n的平面 γ（绕n轴）</div>
+            <div class="slider-group">
+                <div class="slider-header"><span>γ旋转角 θ</span><span class="val" id="theta-val">45°</span></div>
+                <input type="range" id="theta-slider" min="0" max="360" value="45" step="0.5">
+            </div>
+
+            <div class="section-label">🧭 n在⊥m平面内的方向 φ（展示不确定性）</div>
+            <div class="slider-group">
+                <div class="slider-header"><span>n方向角 φ</span><span class="val" id="phi-val">0°</span></div>
+                <input type="range" id="phi-slider" min="0" max="360" value="0" step="0.5">
+            </div>
+
+            <div class="indicator-row">
+                <span class="indicator-dot" id="status-dot" style="background:#ffcc33;box-shadow:0 0 12px #ffcc33;"></span>
+                <span class="indicator-text" id="status-text">γ与β的关系：—</span>
+            </div>
+            <div class="highlight-box none" id="highlight-box">旋转γ观察何时⊥β</div>
+
+            <div class="info-card" id="info-card">
+                <strong>当前条件分析：</strong><br>
+                <span id="analysis-text">加载中…</span>
+            </div>
+
+            <div class="legend-row">
+                <span class="legend-item"><span class="legend-swatch" style="background:#ff4444;"></span> m直线</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#4488ff;"></span> n直线</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:rgba(100,150,255,0.5);"></span> α平面</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:rgba(60,100,220,0.6);"></span> β平面</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ffcc33;"></span> γ平面(过n)</span>
+            </div>
+            <p style="font-size:0.7em;color:#667;text-align:center;">🖱️ 拖拽旋转视角 | 滚轮缩放 | 右键平移</p>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // ==================== DOM元素 ====================
+        const canvasWrapper = document.getElementById('canvas-wrapper');
+        const thetaSlider = document.getElementById('theta-slider');
+        const phiSlider = document.getElementById('phi-slider');
+        const thetaValEl = document.getElementById('theta-val');
+        const phiValEl = document.getElementById('phi-val');
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+        const highlightBox = document.getElementById('highlight-box');
+        const analysisText = document.getElementById('analysis-text');
+        const conditionBtns = document.querySelectorAll('#condition-btns button');
+
+        // ==================== 状态 ====================
+        let currentCondition = 'C'; // 'A' | 'B' | 'C'
+        let theta = 45; // γ绕n旋转角度（度）
+        let phi = 0; // n在⊥m平面内的方向角（度）
+
+        // ==================== Three.js 初始化 ====================
+        const scene = new THREE.Scene();
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(canvasWrapper.clientWidth, canvasWrapper.clientHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.1;
+        canvasWrapper.appendChild(renderer.domElement);
+
+        const camera = new THREE.PerspectiveCamera(50, canvasWrapper.clientWidth / Math.max(canvasWrapper.clientHeight, 1), 0.5, 40);
+        camera.position.set(7, 4.5, 9);
+        camera.lookAt(0, 0, 0);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.target.set(0, 0, 0);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.12;
+        controls.minDistance = 3;
+        controls.maxDistance = 22;
+        controls.maxPolarAngle = Math.PI * 0.85;
+        controls.update();
+
+        // ==================== 光照 ====================
+        const ambientLight = new THREE.AmbientLight('#bcc8dd', 2.5);
+        scene.add(ambientLight);
+        const sunLight = new THREE.DirectionalLight('#ffffff', 4);
+        sunLight.position.set(8, 14, 6);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 1024;
+        sunLight.shadow.mapSize.height = 1024;
+        sunLight.shadow.camera.near = 0.5;
+        sunLight.shadow.camera.far = 50;
+        sunLight.shadow.camera.left = -12;
+        sunLight.shadow.camera.right = 12;
+        sunLight.shadow.camera.top = 12;
+        sunLight.shadow.camera.bottom = -12;
+        sunLight.shadow.bias = -0.0001;
+        scene.add(sunLight);
+        const fillLight = new THREE.DirectionalLight('#8899cc', 1.2);
+        fillLight.position.set(-3, 2, -4);
+        scene.add(fillLight);
+
+        // ==================== 场景元素 ====================
+        // 网格地面（参考）
+        const gridHelper = new THREE.GridHelper(10, 20, '#334466', '#1a2a3a');
+        gridHelper.position.y = -1.5;
+        scene.add(gridHelper);
+
+        // 小网格在原点
+        const gridHelper2 = new THREE.GridHelper(6, 12, '#445577', '#1a2a3a');
+        gridHelper2.position.y = 0;
+        scene.add(gridHelper2);
+
+        // α平面（半透明，y=-1.5）
+        const alphaGeom = new THREE.PlaneGeometry(9, 9);
+        const alphaMat = new THREE.MeshStandardMaterial({
+            color: '#6496ff',
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.35,
+            roughness: 0.3,
+            metalness: 0.05,
+            depthWrite: false,
+        });
+        const alphaPlane = new THREE.Mesh(alphaGeom, alphaMat);
+        alphaPlane.position.y = -1.5;
+        alphaPlane.rotation.x = -Math.PI / 2;
+        alphaPlane.receiveShadow = true;
+        alphaPlane.renderOrder = 1;
+        scene.add(alphaPlane);
+
+        // β平面（半透明，y=1.5，平行于α）
+        const betaGeom = new THREE.PlaneGeometry(9, 9);
+        const betaMat = new THREE.MeshStandardMaterial({
+            color: '#3c64dc',
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.45,
+            roughness: 0.25,
+            metalness: 0.08,
+            depthWrite: false,
+        });
+        const betaPlane = new THREE.Mesh(betaGeom, betaMat);
+        betaPlane.position.y = 1.5;
+        betaPlane.rotation.x = -Math.PI / 2;
+        betaPlane.receiveShadow = true;
+        betaPlane.renderOrder = 2;
+        scene.add(betaPlane);
+
+        // γ平面（过n，绕n旋转）- 将在update中动态设置
+        const gammaGeom = new THREE.PlaneGeometry(5.5, 5.5);
+        const gammaMat = new THREE.MeshStandardMaterial({
+            color: '#ffcc33',
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.5,
+            roughness: 0.35,
+            metalness: 0.1,
+            depthWrite: false,
+        });
+        const gammaPlane = new THREE.Mesh(gammaGeom, gammaMat);
+        gammaPlane.renderOrder = 3;
+        gammaPlane.castShadow = false;
+        gammaPlane.receiveShadow = true;
+        scene.add(gammaPlane);
+
+        // γ平面的边框（线框）
+        const gammaEdgeGeom = new THREE.EdgesGeometry(gammaGeom);
+        const gammaEdgeMat = new THREE.LineBasicMaterial({
+            color: '#ffaa00',
+            transparent: true,
+            opacity: 0.7,
+            depthTest: true,
+        });
+        const gammaEdge = new THREE.LineSegments(gammaEdgeGeom, gammaEdgeMat);
+        gammaPlane.add(gammaEdge);
+
+        // ==================== 辅助函数：创建直线（圆柱体） ====================
+        function createLineCylinder(start, end, radius, colorHex, opacity = 1) {
+            const dir = new THREE.Vector3().subVectors(end, start);
+            const length = dir.length();
+            const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+            const geom = new THREE.CylinderGeometry(radius, radius, length, 20, 1);
+            const mat = new THREE.MeshStandardMaterial({
+                color: colorHex,
+                roughness: 0.3,
+                metalness: 0.2,
+                transparent: opacity < 1,
+                opacity: opacity,
+                depthTest: true,
+            });
+            const mesh = new THREE.Mesh(geom, mat);
+            mesh.position.copy(mid);
+            // 默认圆柱沿y轴，旋转到dir方向
+            const yAxis = new THREE.Vector3(0, 1, 0);
+            const q = new THREE.Quaternion().setFromUnitVectors(yAxis, dir.normalize());
+            mesh.setRotationFromQuaternion(q);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            return mesh;
+        }
+
+        // ==================== 动态对象容器 ====================
+        const dynamicGroup = new THREE.Group();
+        scene.add(dynamicGroup);
+
+        // 当前m和n的网格引用
+        let mLineMesh = null;
+        let nLineMesh = null;
+
+        // 小球标记n上的点
+        const sphereGeomSmall = new THREE.SphereGeometry(0.15, 24, 24);
+        const sphereMatN = new THREE.MeshStandardMaterial({ color: '#4488ff', roughness: 0.2, metalness: 0.3 });
+        const nPointSphere = new THREE.Mesh(sphereGeomSmall, sphereMatN);
+        nPointSphere.castShadow = true;
+        dynamicGroup.add(nPointSphere);
+
+        const sphereMatM = new THREE.MeshStandardMaterial({ color: '#ff4444', roughness: 0.2, metalness: 0.3 });
+        const mPointSphere = new THREE.Mesh(sphereGeomSmall, sphereMatM);
+        mPointSphere.castShadow = true;
+        dynamicGroup.add(mPointSphere);
+
+        // ==================== 箭头标记β的法向量方向 ====================
+        function createSmallArrow(from, direction, length, colorHex) {
+            const group = new THREE.Group();
+            const shaftGeom = new THREE.CylinderGeometry(0.06, 0.06, length * 0.75, 12);
+            const shaftMat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.3, metalness: 0.2 });
+            const shaft = new THREE.Mesh(shaftGeom, shaftMat);
+            shaft.position.y = length * 0.375;
+            shaft.castShadow = true;
+            group.add(shaft);
+
+            const headGeom = new THREE.ConeGeometry(0.14, length * 0.3, 12);
+            const headMat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.3, metalness: 0.2 });
+            const head = new THREE.Mesh(headGeom, headMat);
+            head.position.y = length * 0.75 + length * 0.15;
+            head.castShadow = true;
+            group.add(head);
+
+            group.position.copy(from);
+            const yAxis = new THREE.Vector3(0, 1, 0);
+            const q = new THREE.Quaternion().setFromUnitVectors(yAxis, direction.normalize());
+            group.setRotationFromQuaternion(q);
+            return group;
+        }
+
+        let betaNormalArrow = null;
+        const betaNormalDir = new THREE.Vector3(0, 1, 0); // β的法向量沿y轴
+
+        function updateBetaNormalArrow() {
+            if (betaNormalArrow) {
+                dynamicGroup.remove(betaNormalArrow);
+                // 递归清理
+                betaNormalArrow.traverse(c => {
+                    if (c.geometry && c !== betaNormalArrow) c.geometry.dispose();
+                    if (c.material) {
+                        if (Array.isArray(c.material)) c.material.forEach(m => m.dispose());
+                        else c.material.dispose();
+                    }
+                });
+            }
+            betaNormalArrow = createSmallArrow(
+                new THREE.Vector3(0, 1.5, 2.8),
+                betaNormalDir.clone(),
+                1.2,
+                '#88aaff'
+            );
+            betaNormalArrow.renderOrder = 10;
+            dynamicGroup.add(betaNormalArrow);
+        }
+        updateBetaNormalArrow();
+
+        // ==================== 计算函数 ====================
+        function getMDirection(condition, phiLocal) {
+            // 返回m的单位方向向量
+            const phiRad = THREE.MathUtils.degToRad(phiLocal);
+            if (condition === 'C') {
+                // m⊥α，α法向量沿y轴，所以m沿y轴
+                return new THREE.Vector3(0, 1, 0);
+            } else if (condition === 'A') {
+                // m//α，α是水平面(y=const)，m在xz平面内
+                // n在垂直于m的平面内，由phi参数化
+                // 设定m在xz平面，方向需要⊥n
+                // n由phi决定：n在xy平面内（垂直于z轴的方向不固定）
+                // 为了一致性，在条件A中，n在xy平面内：(cos(phi), sin(phi), 0)
+                // m在xz平面且⊥n：m·n = m_x*cos(phi) + 0*sin(phi) + m_z*0 = m_x*cos(phi)=0
+                const cosPhi = Math.cos(phiRad);
+                if (Math.abs(cosPhi) < 0.001) {
+                    // n沿y轴，m在xz平面任意，选x轴
+                    return new THREE.Vector3(1, 0, 0);
+                }
+                // m沿z轴（在xz平面且⊥n）
+                return new THREE.Vector3(0, 0, 1);
+            } else if (condition === 'B') {
+                // m与α成60°，α是水平面
+                // m在yz平面内，与y轴成30°（与水平面成60°）
+                const mRef = new THREE.Vector3(0, Math.cos(Math.PI / 6), Math.sin(Math.PI / 6)).normalize();
+                return mRef;
+            }
+            return new THREE.Vector3(0, 1, 0);
+        }
+
+        function getNDirection(condition, phiLocal, mDir) {
+            // n⊥m，在垂直于m的平面内由phi参数化
+            const phiRad = THREE.MathUtils.degToRad(phiLocal);
+            // 在⊥m的平面内找两个正交基
+            const mNorm = mDir.clone().normalize();
+            // 找第一个基向量u（⊥m）
+            let u = new THREE.Vector3(1, 0, 0);
+            if (Math.abs(u.dot(mNorm)) > 0.95) {
+                u = new THREE.Vector3(0, 0, 1);
+            }
+            // u在⊥m平面内的投影
+            u = u.clone().sub(mNorm.clone().multiplyScalar(u.dot(mNorm))).normalize();
+            const v = new THREE.Vector3().crossVectors(mNorm, u).normalize();
+            // n = cos(phi)*u + sin(phi)*v
+            const nDir = u.clone().multiplyScalar(Math.cos(phiRad)).add(v.clone().multiplyScalar(Math.sin(phiRad)));
+            return nDir.normalize();
+        }
+
+        function getGammaNormal(nDir, thetaLocal) {
+            // γ的法向量在垂直于nDir的平面内，由theta参数化
+            const thetaRad = THREE.MathUtils.degToRad(thetaLocal);
+            const nNorm = nDir.clone().normalize();
+            let u = new THREE.Vector3(0, 1, 0);
+            if (Math.abs(u.dot(nNorm)) > 0.95) {
+                u = new THREE.Vector3(1, 0, 0);
+            }
+            u = u.clone().sub(nNorm.clone().multiplyScalar(u.dot(nNorm))).normalize();
+            const v = new THREE.Vector3().crossVectors(nNorm, u).normalize();
+            const gammaN = u.clone().multiplyScalar(Math.cos(thetaRad)).add(v.clone().multiplyScalar(Math.sin(thetaRad)));
+            return gammaN.normalize();
+        }
+
+        // ==================== 更新场景 ====================
+        function updateScene() {
+            // 清理旧直线
+            if (mLineMesh) {
+                dynamicGroup.remove(mLineMesh);
+                mLineMesh.traverse(c => {
+                    if (c.geometry && c !== mLineMesh) c.geometry.dispose();
+                    if (c.material) {
+                        if (Array.isArray(c.material)) c.material.forEach(m => m.dispose());
+                        else c.material.dispose();
+                    }
+                });
+                mLineMesh = null;
+            }
+            if (nLineMesh) {
+                dynamicGroup.remove(nLineMesh);
+                nLineMesh.traverse(c => {
+                    if (c.geometry && c !== nLineMesh) c.geometry.dispose();
+                    if (c.material) {
+                        if (Array.isArray(c.material)) c.material.forEach(m => m.dispose());
+                        else c.material.dispose();
+                    }
+                });
+                nLineMesh = null;
+            }
+
+            const mDir = getMDirection(currentCondition, phi);
+            const nDir = getNDirection(currentCondition, phi, mDir);
+            const gammaN = getGammaNormal(nDir, theta);
+
+            // 原点
+            const origin = new THREE.Vector3(0, 0, 0);
+
+            // m直线（从原点沿mDir延伸，长度5）
+            const mStart = origin.clone().addScaledVector(mDir, -2.5);
+            const mEnd = origin.clone().addScaledVector(mDir, 2.5);
+            mLineMesh = createLineCylinder(mStart, mEnd, 0.09, '#ff4444', 1);
+            mLineMesh.renderOrder = 5;
+            dynamicGroup.add(mLineMesh);
+
+            // n直线（从原点沿nDir延伸，长度6）
+            const nStart = origin.clone().addScaledVector(nDir, -3);
+            const nEnd = origin.clone().addScaledVector(nDir, 3);
+            nLineMesh = createLineCylinder(nStart, nEnd, 0.09, '#4488ff', 1);
+            nLineMesh.renderOrder = 5;
+            dynamicGroup.add(nLineMesh);
+
+            // 更新标记球
+            nPointSphere.position.copy(origin);
+            mPointSphere.position.copy(origin);
+
+            // 更新γ平面
+            gammaPlane.position.copy(origin);
+            const defaultNormal = new THREE.Vector3(0, 0, 1);
+            const qGamma = new THREE.Quaternion().setFromUnitVectors(defaultNormal, gammaN);
+            gammaPlane.setRotationFromQuaternion(qGamma);
+
+            // 检测γ与β的关系
+            const betaN = new THREE.Vector3(0, 1, 0); // β的法向量
+            const dotVal = Math.abs(gammaN.dot(betaN));
+            const isPerp = dotVal < 0.025; // γ⊥β (法向量垂直)
+            const isParallel = dotVal > 0.975; // γ//β (法向量平行)
+
+            // 更新γ颜色
+            let gammaColor, gammaOpacity;
+            if (isPerp) {
+                gammaColor = '#4cff88';
+                gammaOpacity = 0.6;
+                gammaMat.color.set(gammaColor);
+                gammaMat.opacity = gammaOpacity;
+                gammaEdgeMat.color.set('#22dd55');
+                gammaEdgeMat.opacity = 0.9;
+                statusDot.style.background = '#4cff88';
+                statusDot.style.boxShadow = '0 0 16px #4cff88';
+                statusText.textContent = 'γ⊥β ✓ 平面γ与β垂直';
+                highlightBox.className = 'highlight-box perp';
+                highlightBox.textContent = '✅ γ ⊥ β — 过n的平面与β垂直！';
+            } else if (isParallel) {
+                gammaColor = '#b066ff';
+                gammaOpacity = 0.55;
+                gammaMat.color.set(gammaColor);
+                gammaMat.opacity = gammaOpacity;
+                gammaEdgeMat.color.set('#8844dd');
+                gammaEdgeMat.opacity = 0.9;
+                statusDot.style.background = '#b066ff';
+                statusDot.style.boxShadow = '0 0 16px #b066ff';
+                statusText.textContent = 'γ//β — 平面γ与β平行';
+                highlightBox.className = 'highlight-box parallel';
+                highlightBox.textContent = '🟣 γ // β — 过n的平面与β平行！';
+            } else {
+                gammaColor = '#ffcc33';
+                gammaOpacity = 0.5;
+                gammaMat.color.set(gammaColor);
+                gammaMat.opacity = gammaOpacity;
+                gammaEdgeMat.color.set('#ffaa00');
+                gammaEdgeMat.opacity = 0.7;
+                statusDot.style.background = '#ffcc33';
+                statusDot.style.boxShadow = '0 0 12px #ffcc33';
+                statusText.textContent =
+                    `γ与β的关系：夹角 ${Math.round(THREE.MathUtils.radToDeg(Math.acos(Math.min(dotVal, 1))))}°（法向量夹角 ${Math.round(THREE.MathUtils.radToDeg(Math.acos(Math.min(dotVal, 1))))}°）`;
+                highlightBox.className = 'highlight-box none';
+                highlightBox.textContent = '🟡 旋转γ，观察何时与β垂直或平行';
+            }
+            gammaMat.needsUpdate = true;
+            gammaEdgeMat.needsUpdate = true;
+
+            // 更新n与β法向量的关系信息
+            const nDotBetaN = Math.abs(nDir.dot(betaN));
+            const nIsParallelToBetaN = nDotBetaN > 0.975;
+            const nIsPerpToBetaN = nDotBetaN < 0.025;
+
+            // 更新解析文字
+            updateAnalysis(mDir, nDir, gammaN, isPerp, isParallel, nIsParallelToBetaN, nIsPerpToBetaN, dotVal);
+
+            // 更新标签显示
+            thetaValEl.textContent = Math.round(theta) + '°';
+            phiValEl.textContent = Math.round(phi) + '°';
+        }
+
+        function updateAnalysis(mDir, nDir, gammaN, isPerp, isParallel, nIsParallelToBetaN, nIsPerpToBetaN, dotVal) {
+            let analysis = '';
+            const betaN = new THREE.Vector3(0, 1, 0);
+
+            if (currentCondition === 'C') {
+                analysis += '<strong>条件C：m⊥α</strong>（m沿y轴，即β的法向量方向）<br>';
+                analysis += '∵ α//β 且 m⊥α，∴ m⊥β<br>';
+                analysis += '∵ m⊥n，∴ n在水平面内（n//β）<br>';
+                analysis += 'n不平行于β的法向量（n⊥y轴），<br>';
+                analysis += '∴ 过n且⊥β的平面由<b>n和β法向量(m方向)</b>张成，<br>';
+                analysis += '<span class="correct">✅ 唯一确定！选项C正确。</span><br>';
+                analysis += '同理，过n且//β的平面也唯一（γ法向量//y轴时），<br>';
+                analysis += '<span class="correct">✅ 选项D也正确。</span><br>';
+                if (isPerp) {
+                    analysis += '<br><span class="correct">👉 当前γ正处于⊥β的位置！（绿色高亮）</span>';
+                } else if (isParallel) {
+                    analysis += '<br><span class="correct">👉 当前γ正处于//β的位置！（紫色高亮）</span>';
+                }
+            } else if (currentCondition === 'A') {
+                analysis += '<strong>条件A：m//α</strong>（m在水平面内）<br>';
+                analysis += 'm⊥n，但n的方向<b>不确定</b>（在⊥m的平面内）<br>';
+                if (nIsParallelToBetaN) {
+                    analysis += '⚠️ 当前φ使n//β法向量(y轴)，<br>';
+                    analysis += '过n的<b>任何</b>平面都包含y轴方向→都⊥β<br>';
+                    analysis += '<span class="wrong">❌ 无穷多解！不唯一。</span><br>';
+                } else if (nIsPerpToBetaN) {
+                    analysis += '当前φ使n⊥β法向量（n//β），<br>';
+                    analysis += '过n且⊥β的平面由n和y轴张成→唯一<br>';
+                    analysis += '但φ可变，题目未固定n方向，<br>';
+                    analysis += '<span class="wrong">❌ 条件不足，不能保证唯一性。选项A错误。</span><br>';
+                } else {
+                    analysis += '当前φ使n既不平行也不垂直于β法向量，<br>';
+                    analysis += '过n且⊥β的平面由n和y轴张成→唯一<br>';
+                    analysis += '但φ可变，n可能平行于y轴（无穷多解），<br>';
+                    analysis += '<span class="wrong">❌ 条件不足，选项A错误。</span><br>';
+                }
+                if (isPerp && !nIsParallelToBetaN) {
+                    analysis += '<br><span class="correct">👉 当前γ正处于⊥β的位置！</span>';
+                }
+            } else if (currentCondition === 'B') {
+                analysis += '<strong>条件B：m与α成60°</strong><br>';
+                analysis += 'm的方向部分确定（在锥面上），n⊥m<br>';
+                analysis += 'n的方向仍有自由度（在⊥m的平面内）<br>';
+                if (nIsParallelToBetaN) {
+                    analysis += '⚠️ 存在φ使n//β法向量→无穷多解<br>';
+                    analysis += '<span class="wrong">❌ 不能保证唯一性。选项B错误。</span><br>';
+                } else {
+                    analysis += '当前φ下过n且⊥β的平面唯一，<br>';
+                    analysis += '但n方向可变，存在n//β法向量的情况，<br>';
+                    analysis += '<span class="wrong">❌ 条件不足，选项B错误。</span><br>';
+                }
+                if (isPerp) {
+                    analysis += '<br><span class="correct">👉 当前γ正处于⊥β的位置！</span>';
+                }
+            }
+
+            analysisText.innerHTML = analysis;
+        }
+
+        // ==================== 事件监听 ====================
+        thetaSlider.addEventListener('input', () => {
+            theta = parseFloat(thetaSlider.value);
+            updateScene();
+        });
+
+        phiSlider.addEventListener('input', () => {
+            phi = parseFloat(phiSlider.value);
+            updateScene();
+        });
+
+        conditionBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                conditionBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentCondition = btn.dataset.cond;
+                // 切换条件时重置phi为0
+                phi = 0;
+                phiSlider.value = 0;
+                phiValEl.textContent = '0°';
+                updateScene();
+            });
+        });
+
+        // 键盘快捷键
+        window.addEventListener('keydown', (e) => {
+            switch (e.key.toLowerCase()) {
+                case 'a':
+                    currentCondition = 'A';
+                    phi = 0;
+                    phiSlider.value = 0;
+                    conditionBtns.forEach(b => b.classList.remove('active'));
+                    conditionBtns[0].classList.add('active');
+                    updateScene();
+                    break;
+                case 'b':
+                    currentCondition = 'B';
+                    phi = 0;
+                    phiSlider.value = 0;
+                    conditionBtns.forEach(b => b.classList.remove('active'));
+                    conditionBtns[1].classList.add('active');
+                    updateScene();
+                    break;
+                case 'c':
+                    currentCondition = 'C';
+                    phi = 0;
+                    phiSlider.value = 0;
+                    conditionBtns.forEach(b => b.classList.remove('active'));
+                    conditionBtns[2].classList.add('active');
+                    updateScene();
+                    break;
+                case 'arrowleft':
+                    theta = Math.max(0, theta - 2);
+                    thetaSlider.value = theta;
+                    updateScene();
+                    break;
+                case 'arrowright':
+                    theta = Math.min(360, theta + 2);
+                    thetaSlider.value = theta;
+                    updateScene();
+                    break;
+                case 'arrowup':
+                    phi = Math.min(360, phi + 2);
+                    phiSlider.value = phi;
+                    updateScene();
+                    break;
+                case 'arrowdown':
+                    phi = Math.max(0, phi - 2);
+                    phiSlider.value = phi;
+                    updateScene();
+                    break;
+                default:
+                    break;
+            }
+        });
+
+        // 响应式处理
+        window.addEventListener('resize', () => {
+            camera.aspect = canvasWrapper.clientWidth / Math.max(canvasWrapper.clientHeight, 1);
+            camera.updateProjectionMatrix();
+            renderer.setSize(canvasWrapper.clientWidth, canvasWrapper.clientHeight);
+        });
+
+        // ==================== 渲染循环 ====================
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // ==================== 初始设置 ====================
+        updateScene();
+        animate();
+
+        // ==================== 初始日志 ====================
+        console.log('📐 立体几何模拟已就绪');
+        console.log('  条件：m⊥n，α//β');
+        console.log('  当前条件：选项C（m⊥α）');
+        console.log('  拖拽鼠标旋转视角 | 滚轮缩放 | 右键平移');
+        console.log('  键盘快捷键：A/B/C切换条件，←→调整θ，↑↓调整φ');
+        console.log('  滑动θ旋转过n的平面γ，观察何时γ⊥β');
+        console.log('  滑动φ改变n的方向，观察条件A/B的不确定性');
+        console.log('  正确答案：C和D（当m⊥α时，过n可作唯一平面与β垂直，也可作唯一平面与β平行）');
+    </script>
+</body>
+</html>

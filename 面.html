@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>三棱锥 A-A₁PD 外接球 (调换 B↔D · B₁↔D₁) | D选项</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', 'PingFang SC', Roboto, 'Helvetica Neue', sans-serif;
+            background-color: #111;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 72%;
+            height: 100vh;
+        }
+
+        #info-panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 28%;
+            height: 100vh;
+            background: rgba(22, 22, 28, 0.92);
+            backdrop-filter: blur(8px);
+            color: #e0e0e0;
+            padding: 24px 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        #info-panel::-webkit-scrollbar {
+            width: 4px;
+        }
+        #info-panel::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+
+        .title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 1px;
+            border-bottom: 2px solid #ff7f50;
+            padding-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 15px;
+            color: #aaa;
+            line-height: 1.5;
+        }
+
+        .options-box {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin: 4px 0;
+            border-left: 4px solid #ffaa44;
+        }
+
+        .options-box .label {
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .highlight-d {
+            border-left-color: #4fc3f7;
+            background: rgba(79, 195, 247, 0.08);
+        }
+
+        .highlight-d .label {
+            color: #4fc3f7;
+        }
+
+        .proof-box {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            padding: 16px 18px;
+            font-size: 14px;
+            line-height: 1.7;
+            color: #ccc;
+            border: 1px solid #2a2a3a;
+            margin-top: 4px;
+            position: relative;
+        }
+
+        .proof-box .step {
+            margin-bottom: 6px;
+        }
+
+        .proof-box .math {
+            font-family: 'Courier New', monospace;
+            color: #fff;
+            background: #1e1e2a;
+            padding: 0 6px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .proof-box .result {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4fc3f7;
+            margin-top: 8px;
+            padding-top: 10px;
+            border-top: 1px dashed #333;
+        }
+
+        .notice {
+            font-size: 13px;
+            color: #888;
+            margin-top: 6px;
+        }
+
+        .btn-reset {
+            background: #2a2a3a;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            color: #ddd;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+        .btn-reset:hover {
+            background: #3a3a4a;
+        }
+
+        .flex-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 800px) {
+            #canvas-container {
+                width: 100%;
+                height: 60vh;
+            }
+            #info-panel {
+                width: 100%;
+                height: 40vh;
+                top: 60vh;
+                border-left: none;
+                border-top: 1px solid rgba(255, 255, 255, 0.08);
+                padding: 14px 16px;
+            }
+            .title {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="info-panel">
+        <div>
+            <div class="title">🧊 立体几何 (调换 B↔D · B₁↔D₁)</div>
+            <div class="subtitle">棱长为 1 的正方体 · 上下底面调换 · B↔D, B₁↔D₁</div>
+        </div>
+
+        <div class="options-box highlight-d">
+            <div class="label">✅ D 选项 · 外接球表面积</div>
+            <div style="font-size: 15px; margin-top: 4px; color: #fff;">
+                三棱锥 A–A₁PD 的外接球的表面积为 <span style="color: #4fc3f7; font-weight: bold;">41π / 16</span>
+            </div>
+        </div>
+
+        <div>
+            <div style="font-weight: 600; font-size: 15px; color: #fff; margin-bottom: 6px;">📐 推导证明 (新坐标下)</div>
+            <div class="proof-box">
+                <div class="step">调换后坐标：A(0,1,0), A₁(0,0,0), D(1,1,0), P(0, 0.5, 1)</div>
+                <div class="step">设球心 O(x,y,z)，由 OA=OA₁=OD=OP 得：</div>
+                <div class="step">
+                    x² + (y–1)² + z² = R² &nbsp;……①<br />
+                    x² + y² + z² = R² ⇒ <span class="math">y = 1/2</span><br />
+                    (x–1)² + (y–1)² + z² = R² ⇒ <span class="math">x = 1/2</span><br />
+                    x² + (y–0.5)² + (z–1)² = R² ⇒ <span class="math">z = 3/8</span>
+                </div>
+                <div class="step">
+                    球心 O(<span class="math">1/2</span>, <span class="math">1/2</span>, <span class="math">3/8</span>)
+                </div>
+                <div class="step">
+                    R² = (1/2)² + (1/2)² + (3/8)² = 1/4 + 1/4 + 9/64 = <span class="math">41/64</span>
+                </div>
+                <div class="result">
+                    S = 4πR² = 4π × 41/64 = <span style="font-size: 20px;">41π / 16</span> ✅
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-row" style="margin-top: 4px;">
+            <span style="color: #888; font-size: 13px;">🖱️ 拖拽旋转 · 滚轮缩放</span>
+            <button class="btn-reset" id="resetViewBtn">重置视角</button>
+        </div>
+
+        <div class="notice">
+            <span style="color: #ff7f50;">●</span> 红色四面体：三棱锥 A–A₁PD
+            <span style="color: #4fc3f7; margin-left: 12px;">●</span> 蓝色透明球：外接球
+            <span style="color: #ffaa00; margin-left: 12px;">●</span> 顶点 P 标记
+        </div>
+    </div>
+
+    <!-- 引入 Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x11161e);
+
+        const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 10);
+        camera.position.set(1.8, 1.8, 2.2);
+        camera.lookAt(0.5, 0.5, 0.5);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(container.clientWidth, container.clientHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0';
+        labelRenderer.domElement.style.left = '0';
+        labelRenderer.domElement.style.pointerEvents = 'none';
+        container.appendChild(labelRenderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.target.set(0.5, 0.5, 0.5);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.08;
+        controls.rotateSpeed = 0.8;
+        controls.update();
+
+        document.getElementById('resetViewBtn').addEventListener('click', () => {
+            camera.position.set(1.8, 1.8, 2.2);
+            controls.target.set(0.5, 0.5, 0.5);
+            controls.update();
+        });
+
+        // 灯光
+        const ambient = new THREE.AmbientLight(0x404060, 0.6);
+        scene.add(ambient);
+        const dir = new THREE.DirectionalLight(0xffffff, 1.8);
+        dir.position.set(2, 5, 3);
+        scene.add(dir);
+        const fill = new THREE.DirectionalLight(0x88aaff, 0.5);
+        fill.position.set(-2, 1, -1);
+        scene.add(fill);
+        const back = new THREE.DirectionalLight(0xffaa88, 0.4);
+        back.position.set(1, -1, -2);
+        scene.add(back);
+
+        // ---- 坐标 (上下调换 + B↔D, B₁↔D₁) ----
+        // 原始: A(0,0,0) B(1,0,0) C(1,0,1) D(0,0,1)  A1(0,1,0) B1(1,1,0) C1(1,1,1) D1(0,1,1)
+        // 上下调换: y↔1-y => A(0,1,0) B(1,1,0) C(1,1,1) D(0,1,1)  A1(0,0,0) B1(1,0,0) C1(1,0,1) D1(0,0,1)
+        // B↔D, B₁↔D₁ => B(0,1,1) D(1,1,0)  B1(0,0,1) D1(1,0,0)
+        // 最终:
+        const pts = {
+            A: [0, 1, 0],
+            B: [0, 1, 1],
+            C: [1, 1, 1],
+            D: [1, 1, 0],
+            A1: [0, 0, 0],
+            B1: [0, 0, 1],
+            C1: [1, 0, 1],
+            D1: [1, 0, 0],
+            P: [0, 0.5, 1], // BB1 中点
+            O: [0.5, 0.5, 3 / 8], // 球心
+        };
+
+        const p = (key) => new THREE.Vector3(pts[key][0], pts[key][1], pts[key][2]);
+
+        // ---- 正方体 ----
+        const cubeMat = new THREE.MeshPhongMaterial({
+            color: 0x88aaff,
+            transparent: true,
+            opacity: 0.06,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+        });
+        const cubeMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), cubeMat);
+        cubeMesh.position.set(0.5, 0.5, 0.5);
+        scene.add(cubeMesh);
+
+        const edgesGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, 1));
+        const edgesMat = new THREE.LineBasicMaterial({ color: 0x4a6a8a });
+        const edgesLine = new THREE.LineSegments(edgesGeo, edgesMat);
+        edgesLine.position.set(0.5, 0.5, 0.5);
+        scene.add(edgesLine);
+
+        // ---- 三棱锥 A-A1PD ----
+        const tetraColor = 0xff7f50;
+        const tetraMat = new THREE.MeshPhongMaterial({
+            color: tetraColor,
+            transparent: true,
+            opacity: 0.55,
+            side: THREE.DoubleSide,
+            emissive: 0x331100,
+            emissiveIntensity: 0.15,
+        });
+
+        function makeTriangle(v1, v2, v3, mat) {
+            const geo = new THREE.BufferGeometry();
+            const verts = new Float32Array([
+                v1.x, v1.y, v1.z,
+                v2.x, v2.y, v2.z,
+                v3.x, v3.y, v3.z,
+            ]);
+            geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+            geo.setIndex([0, 1, 2]);
+            geo.computeVertexNormals();
+            return new THREE.Mesh(geo, mat);
+        }
+
+        const A = p('A'),
+            A1 = p('A1'),
+            D = p('D'),
+            P = p('P');
+
+        scene.add(makeTriangle(A, A1, D, tetraMat));
+        scene.add(makeTriangle(A, A1, P, tetraMat));
+        scene.add(makeTriangle(A, D, P, tetraMat));
+        scene.add(makeTriangle(A1, D, P, tetraMat));
+
+        // 棱边
+        const edgeMat = new THREE.LineBasicMaterial({ color: 0xff5500 });
+        [
+            [A, A1],
+            [A, D],
+            [A, P],
+            [A1, D],
+            [A1, P],
+            [D, P]
+        ].forEach(([v1, v2]) => {
+            const geo = new THREE.BufferGeometry();
+            const verts = new Float32Array([v1.x, v1.y, v1.z, v2.x, v2.y, v2.z]);
+            geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+            scene.add(new THREE.Line(geo, edgeMat));
+        });
+
+        // ---- 外接球 ----
+        const R = Math.sqrt(41 / 64);
+        const sphereMat = new THREE.MeshPhongMaterial({
+            color: 0x4fc3f7,
+            transparent: true,
+            opacity: 0.22,
+            side: THREE.DoubleSide,
+            emissive: 0x004466,
+            emissiveIntensity: 0.1,
+        });
+        const sphere = new THREE.Mesh(new THREE.SphereGeometry(R, 56, 56), sphereMat);
+        sphere.position.copy(p('O'));
+        scene.add(sphere);
+
+        // 球体经纬线
+        const wireSphere = new THREE.Mesh(
+            new THREE.SphereGeometry(R, 24, 16),
+            new THREE.MeshBasicMaterial({ color: 0x4fc3f7, wireframe: true, transparent: true, opacity: 0.08 })
+        );
+        wireSphere.position.copy(p('O'));
+        scene.add(wireSphere);
+
+        // 球心
+        const centerDot = new THREE.Mesh(
+            new THREE.SphereGeometry(0.035, 12, 12),
+            new THREE.MeshPhongMaterial({ color: 0x4fc3f7, emissive: 0x004466 })
+        );
+        centerDot.position.copy(p('O'));
+        scene.add(centerDot);
+
+        // ---- 顶点标记 ----
+        const vertColors = {
+            A: 0xff3333,
+            B: 0x888888,
+            C: 0x888888,
+            D: 0xff3333,
+            A1: 0xff3333,
+            B1: 0x888888,
+            C1: 0x888888,
+            D1: 0x888888,
+            P: 0xffaa00,
+        };
+        Object.keys(pts).forEach(key => {
+            if (key === 'O') return;
+            const color = vertColors[key] || 0x88aaff;
+            const mesh = new THREE.Mesh(
+                new THREE.SphereGeometry(key === 'A' || key === 'A1' || key === 'D' || key === 'P' ? 0.045 : 0.03, 16, 16),
+                new THREE.MeshPhongMaterial({ color, emissive: color, emissiveIntensity: 0.2 })
+            );
+            mesh.position.copy(p(key));
+            scene.add(mesh);
+        });
+
+        // ---- 标签 ----
+        function makeLabel(text, pos, offset = new THREE.Vector3(0.08, 0.08, 0.08), color = '#fff') {
+            const div = document.createElement('div');
+            div.textContent = text;
+            div.style.color = color;
+            div.style.fontSize = '16px';
+            div.style.fontWeight = '700';
+            div.style.textShadow = '0 0 12px rgba(0,0,0,0.9), 0 0 4px #000';
+            div.style.background = 'rgba(10,10,20,0.7)';
+            div.style.backdropFilter = 'blur(2px)';
+            div.style.padding = '2px 10px';
+            div.style.borderRadius = '12px';
+            div.style.border = '1px solid rgba(255,255,255,0.15)';
+            const label = new CSS2DObject(div);
+            label.position.copy(pos).add(offset);
+            return label;
+        }
+
+        const labelMap = { A: 'A', B: 'B', C: 'C', D: 'D', A1: 'A₁', B1: 'B₁', C1: 'C₁', D1: 'D₁', P: 'P', O: 'O' };
+        Object.keys(labelMap).forEach(key => {
+            const pos = p(key);
+            const text = labelMap[key];
+            const col = key === 'O' ? '#4fc3f7' : '#fff';
+            const off = key === 'O' ? new THREE.Vector3(0.12, 0.12, 0.12) : new THREE.Vector3(0.08, 0.08, 0.08);
+            scene.add(makeLabel(text, pos, off, col));
+        });
+
+        // ---- 网格 ----
+        const grid = new THREE.GridHelper(2.0, 12, 0x446688, 0x224466);
+        grid.position.set(0.5, -0.02, 0.5);
+        scene.add(grid);
+
+        // ---- 适配 ----
+        function onResize() {
+            const w = container.clientWidth,
+                h = container.clientHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+            labelRenderer.setSize(w, h);
+        }
+        window.addEventListener('resize', onResize);
+        new ResizeObserver(onResize).observe(container);
+
+        // ---- 循环 ----
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
+        }
+        animate();
+        setTimeout(onResize, 100);
+
+        console.log('✅ 调换 B↔D · B₁↔D₁ 版，外接球表面积 S = 41π/16');
+    </script>
+</body>
+</html>
