@@ -293,6 +293,30 @@
             transform: translateX(4px);
         }
 
+        .btn-tools {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.12), rgba(255, 193, 77, 0.12));
+            color: #ffccbb;
+            border: 1px solid rgba(255, 107, 107, 0.15);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .btn-tools:hover {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.22), rgba(255, 193, 77, 0.22));
+            border-color: rgba(255, 107, 107, 0.35);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 48px rgba(255, 107, 107, 0.12);
+        }
+
+        .btn-tools .arrow {
+            display: inline-block;
+            transition: transform 0.35s ease;
+        }
+
+        .btn-tools:hover .arrow {
+            transform: translateX(4px);
+        }
+
         .hero-sub-buttons {
             margin-top: 16px;
             display: flex;
@@ -549,18 +573,19 @@
             <li><a href="#about">关于</a></li>
             <li><a href="demos.html">演示</a></li>
             <li><a href="learn.html">学习</a></li>
+            <li><a href="tools/epub2txt.html">工具</a></li>
             <li><a href="#">联系</a></li>
         </ul>
     </nav>
 
     <!-- ===== HERO ===== -->
     <section class="hero" id="hero">
-        <p class="hero-subtitle">Interactive 3D · Geometry · Physics · Biology</p>
+        <p class="hero-subtitle">Interactive 3D · Geometry · Physics · Biology · Tools</p>
         <h1 class="hero-title">
             用 <span class="highlight">三维</span> 理解世界
         </h1>
         <p class="hero-desc">
-            交互式教学演示与学习资料 — 将抽象的数学、物理与生物概念<br />
+            交互式教学演示、学习资料与在线工具 — 将抽象的数学、物理与生物概念<br />
             转化为可视、可触的 3D 体验与精炼的知识总结。
         </p>
         <div class="hero-buttons">
@@ -569,6 +594,9 @@
             </a>
             <a href="learn.html" class="btn btn-learn">
                 学习资料 <span class="arrow">→</span>
+            </a>
+            <a href="tools/epub2txt.html" class="btn btn-tools">
+                在线工具 <span class="arrow">→</span>
             </a>
         </div>
         <div class="hero-sub-buttons">
