@@ -1,0 +1,325 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WAV→MP3 · 批量转换器</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:#0a0a0a;color:#e0e4ee;
+    min-height:100vh;-webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  body::after{
+    content:'';position:fixed;inset:0;z-index:9999;
+    pointer-events:none;opacity:0.025;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat:repeat;background-size:256px 256px;
+  }
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.2)}
+  #cursor-glow{
+    position:fixed;width:420px;height:420px;border-radius:50%;
+    background:radial-gradient(circle at center,rgba(230,126,34,0.06),transparent 70%);
+    pointer-events:none;z-index:1;transform:translate(-50%,-50%);
+  }
+  nav{
+    position:fixed;top:0;left:0;width:100%;z-index:1000;
+    padding:20px 48px;display:flex;justify-content:space-between;
+    align-items:center;transition:background 0.4s,padding 0.3s;
+  }
+  nav.scrolled{
+    background:rgba(10,10,10,0.85);backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);padding:14px 48px;
+    border-bottom:1px solid rgba(255,255,255,0.04);
+  }
+  .nav-logo{font-size:1rem;font-weight:300;letter-spacing:4px;color:rgba(255,255,255,0.6)}
+  .nav-logo span{color:rgba(230,126,34,0.6)}
+  .nav-links{list-style:none;display:flex;gap:32px}
+  .nav-links a{
+    color:rgba(255,255,255,0.4);text-decoration:none;font-size:0.8rem;
+    letter-spacing:2px;font-weight:400;text-transform:uppercase;
+    transition:color 0.3s;padding:4px 0;border-bottom:1px solid transparent;
+  }
+  .nav-links a:hover{color:rgba(255,255,255,0.8)}
+  .nav-links a.active{color:#e67e22;border-bottom-color:#e67e22}
+  .container{max-width:860px;margin:0 auto;padding:100px 24px 60px;position:relative;z-index:2}
+  .tool-header{text-align:center;margin-bottom:48px}
+  .tool-header .icon{font-size:48px;margin-bottom:12px}
+  .tool-header h1{font-size:2.2rem;font-weight:200;letter-spacing:4px;color:#fff}
+  .tool-header h1 strong{font-weight:700;background:linear-gradient(135deg,#e67e22,#f39c12);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .tool-header p{color:#667;font-size:0.85rem;margin-top:8px;letter-spacing:1px}
+  .tool-header .divider{width:60px;height:2px;background:linear-gradient(90deg,#e67e22,#f39c12);border-radius:2px;margin:12px auto 0}
+  .card{
+    background:rgba(255,255,255,0.03);backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.06);
+    border-radius:16px;padding:28px;margin-bottom:20px;
+    transition:border-color 0.3s;
+  }
+  .card:hover{border-color:rgba(255,255,255,0.1)}
+  .drop-zone{
+    border:1px dashed rgba(255,255,255,0.12);border-radius:12px;
+    padding:48px 20px;text-align:center;cursor:pointer;
+    transition:all 0.3s ease;
+  }
+  .drop-zone:hover,.drop-zone.drag-over{
+    border-color:rgba(230,126,34,0.4);background:rgba(230,126,34,0.04);
+  }
+  .drop-zone-icon{font-size:48px;margin-bottom:12px;opacity:0.6}
+  .drop-zone-text{font-size:1.05em;color:#99aacb}
+  .drop-zone-hint{font-size:0.82em;color:#556;margin-top:8px}
+  input[type="file"]{display:none}
+  .settings-row{display:flex;flex-wrap:wrap;gap:24px;align-items:center}
+  .quality-group{flex:1;min-width:200px}
+  .quality-group label{font-size:0.85em;color:#99aacb;letter-spacing:1px}
+  .quality-group input[type="range"]{width:100%;margin-top:8px;accent-color:#e67e22}
+  .quality-value{font-weight:700;color:#e67e22;font-size:1.1em}
+  .quality-labels{display:flex;justify-content:space-between;font-size:0.75em;color:#556;margin-top:4px}
+  .badge{
+    display:inline-block;background:rgba(230,126,34,0.2);color:#e67e22;
+    padding:2px 10px;border-radius:20px;font-size:0.75em;margin-left:8px;
+  }
+  .actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;padding:12px 28px;
+    border:none;border-radius:10px;font-size:0.85em;font-weight:500;
+    cursor:pointer;transition:all 0.25s ease;letter-spacing:1px;
+  }
+  .btn-primary{
+    background:linear-gradient(135deg,rgba(230,126,34,0.2),rgba(243,156,18,0.2));
+    color:#e67e22;border:1px solid rgba(230,126,34,0.2);
+  }
+  .btn-primary:hover:not(:disabled){
+    background:linear-gradient(135deg,rgba(230,126,34,0.3),rgba(243,156,18,0.3));
+    border-color:rgba(230,126,34,0.4);transform:translateY(-1px);
+    box-shadow:0 8px 24px rgba(230,126,34,0.1);
+  }
+  .btn-primary:disabled{opacity:0.4;cursor:not-allowed}
+  .btn-danger{
+    background:rgba(255,255,255,0.04);color:#ff6b6b;
+    border:1px solid rgba(255,107,107,0.15);
+  }
+  .btn-danger:hover{background:rgba(255,107,107,0.1);transform:translateY(-1px)}
+  .file-list{margin-top:16px}
+  .file-item{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 14px;border:1px solid rgba(255,255,255,0.05);
+    border-radius:8px;margin-bottom:6px;transition:background 0.2s;
+  }
+  .file-item:hover{background:rgba(255,255,255,0.02)}
+  .file-item .name{flex:1;font-size:0.88em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .file-item .size{color:#556;font-size:0.8em;margin:0 12px}
+  .file-item .status{font-size:0.82em;min-width:70px;text-align:right}
+  .status-pending{color:#556}
+  .status-converting{color:#e67e22}
+  .status-done{color:#2ecc71}
+  .status-error{color:#e74c3c}
+  .progress-bar-wrap{
+    height:3px;background:rgba(255,255,255,0.06);border-radius:2px;
+    margin-top:16px;overflow:hidden;
+  }
+  .progress-bar{height:100%;background:linear-gradient(90deg,#e67e22,#f39c12);border-radius:2px;transition:width 0.3s;width:0%}
+  .overall-progress{margin-top:12px;font-size:0.85em;color:#556;text-align:center}
+  .download-all{margin-top:16px;display:none}
+  .download-all.show{display:block}
+  .empty-state{text-align:center;padding:40px 20px;color:#556}
+  .empty-state .icon{font-size:64px;margin-bottom:16px;opacity:0.3}
+  @media(max-width:600px){
+    .container{padding:80px 16px 40px}
+    .tool-header h1{font-size:1.6rem}
+    nav{padding:16px 20px}
+    nav.scrolled{padding:12px 20px}
+    .nav-links{gap:16px}
+    .nav-links a{font-size:0.7rem;letter-spacing:1px}
+    .card{padding:20px}
+    .drop-zone{padding:32px 16px}
+    .file-item{flex-wrap:wrap;gap:4px}
+    .file-item .size{margin:0 8px}
+  }
+</style>
+</head>
+<body>
+<div id="cursor-glow"></div>
+<nav id="navbar">
+  <div class="nav-logo">Tools<span>·</span>Audio</div>
+  <ul class="nav-links">
+    <li><a href="../index.html">主页</a></li>
+    <li><a href="../demos.html">演示</a></li>
+    <li><a href="epub2txt.html">工具</a></li>
+    <li><a href="wav2mp3.html" class="active">WAV→MP3</a></li>
+  </ul>
+</nav>
+<div class="container">
+  <div class="tool-header">
+    <div class="icon">🎵</div>
+    <h1><strong>WAV</strong> → MP3</h1>
+    <p>批量转换 · 纯前端处理 · 文件不上传服务器</p>
+    <div class="divider"></div>
+  </div>
+  <div class="card">
+    <div class="drop-zone" id="dropZone">
+      <div class="drop-zone-icon">📁</div>
+      <div class="drop-zone-text">拖拽 WAV 文件到此处，或点击选择文件</div>
+      <div class="drop-zone-hint">支持批量选择，一次最多 50 个文件</div>
+    </div>
+    <input type="file" id="fileInput" accept=".wav,audio/wav" multiple>
+  </div>
+  <div class="card">
+    <div class="settings-row">
+      <div class="quality-group">
+        <label>转换质量 <span class="badge" id="qualityLabel">标准</span></label>
+        <input type="range" id="qualitySlider" min="8" max="320" value="192" step="8">
+        <div class="quality-labels">
+          <span>低质量 / 小体积</span>
+          <span class="quality-value" id="qualityDisplay">192 kbps</span>
+          <span>高质量 / 大体积</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn btn-primary" id="btnConvert" disabled>🔄 开始转换</button>
+    <button class="btn btn-danger" id="btnClear">🗑 清空列表</button>
+  </div>
+  <div class="card file-list" id="fileList" style="display:none;">
+    <div class="progress-bar-wrap" id="progressWrap" style="display:none;">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="overall-progress" id="overallProgress"></div>
+    <div id="fileItems"></div>
+    <div class="download-all" id="downloadAll">
+      <button class="btn btn-primary" id="btnDownloadAll">⬇ 下载全部（ZIP 打包）</button>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script>
+(function(){
+  const dropZone=document.getElementById('dropZone');
+  const fileInput=document.getElementById('fileInput');
+  const fileItems=document.getElementById('fileItems');
+  const fileList=document.getElementById('fileList');
+  const btnConvert=document.getElementById('btnConvert');
+  const btnClear=document.getElementById('btnClear');
+  const btnDownloadAll=document.getElementById('btnDownloadAll');
+  const downloadAll=document.getElementById('downloadAll');
+  const qualitySlider=document.getElementById('qualitySlider');
+  const qualityDisplay=document.getElementById('qualityDisplay');
+  const qualityLabel=document.getElementById('qualityLabel');
+  const progressBar=document.getElementById('progressBar');
+  const progressWrap=document.getElementById('progressWrap');
+  const overallProgress=document.getElementById('overallProgress');
+  let files=[];
+  const qn={8:'电话音质',16:'极低',32:'低',64:'较低',96:'标准低',128:'标准',160:'良好',192:'标准',224:'良好+',256:'高',288:'很高',320:'极高'};
+  qualitySlider.addEventListener('input',()=>{
+    const v=parseInt(qualitySlider.value);
+    qualityDisplay.textContent=v+' kbps';
+    qualityLabel.textContent=qn[v]||'自定义';
+  });
+  dropZone.addEventListener('click',()=>fileInput.click());
+  dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag-over');});
+  dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.classList.remove('drag-over');handleFiles(Array.from(e.dataTransfer.files));});
+  fileInput.addEventListener('change',()=>{handleFiles(Array.from(fileInput.files));fileInput.value='';});
+  function handleFiles(incoming){
+    const wavs=incoming.filter(f=>f.name.toLowerCase().endsWith('.wav')&&f.size>44);
+    if(wavs.length===0){alert('请选择有效的 WAV 文件（至少 44 字节）。');return;}
+    if(files.length+wavs.length>50){alert('一次最多处理 50 个文件。');return;}
+    files=files.concat(wavs);
+    renderFileList();
+    btnConvert.disabled=false;
+  }
+  btnClear.addEventListener('click',()=>{
+    if(files.length===0)return;
+    if(!confirm('确定清空文件列表？'))return;
+    files=[];renderFileList();btnConvert.disabled=true;
+    downloadAll.classList.remove('show');progressWrap.style.display='none';
+    overallProgress.textContent='';
+  });
+  function renderFileList(){
+    if(files.length===0){fileList.style.display='none';return;}
+    fileList.style.display='block';
+    let html='';
+    files.forEach((f,i)=>{
+      const size=f.size>1024*1024?(f.size/1024/1024).toFixed(1)+' MB':(f.size/1024).toFixed(0)+' KB';
+      html+='<div class="file-item" data-index="'+i+'"><span class="name">'+esc(f.name)+'</span><span class="size">'+size+'</span><span class="status status-pending" id="status-'+i+'">等待转换</span></div>';
+    });
+    fileItems.innerHTML=html;
+  }
+  function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  btnConvert.addEventListener('click',async()=>{
+    if(files.length===0)return;
+    btnConvert.disabled=true;btnClear.disabled=true;
+    downloadAll.classList.remove('show');progressWrap.style.display='block';
+    const bitrate=parseInt(qualitySlider.value);
+    const results=[];let completed=0;
+    for(let i=0;i<files.length;i++){
+      const file=files[i];
+      const se=document.getElementById('status-'+i);
+      se.className='status status-converting';se.textContent='转换中...';
+      try{
+        const buf=await file.arrayBuffer();
+        const wav=decodeWav(buf);
+        const mp3=encodeMp3(wav,bitrate);
+        const blob=new Blob(mp3,{type:'audio/mpeg'});
+        const name=file.name.replace(/\.wav$/i,'')+'.mp3';
+        results.push({name,blob});
+        se.className='status status-done';
+        se.textContent='✅ '+(blob.size/1024).toFixed(0)+' KB';
+      }catch(err){
+        console.error(err);
+        se.className='status status-error';se.textContent='❌ 失败';
+      }
+      completed++;
+      progressBar.style.width=(completed/files.length*100)+'%';
+      overallProgress.textContent=completed+' / '+files.length+' 完成';
+    }
+    btnClear.disabled=false;
+    progressBar.style.width='100%';
+    overallProgress.textContent='全部完成！共 '+results.length+' 个文件';
+    if(results.length>0){downloadAll.classList.add('show');btnDownloadAll.onclick=()=>downloadZip(results);}
+  });
+  function decodeWav(buffer){
+    const v=new DataView(buffer);
+    return{samples:new Int16Array(buffer,44,(buffer.byteLength-44)/2),sampleRate:v.getUint32(24,true),numChannels:v.getUint16(22,true)};
+  }
+  function encodeMp3(w,bitrate){
+    const{samples,sampleRate,numChannels}=w;
+    const enc=new lamejs.Mp3Encoder(numChannels,sampleRate,bitrate);
+    const data=[];const bs=1152;
+    if(numChannels===1){
+      for(let i=0;i<samples.length;i+=bs){const b=enc.encodeBuffer(samples.subarray(i,i+bs));if(b.length>0)data.push(new Uint8Array(b));}
+    }else{
+      const L=new Int16Array(samples.length/2);const R=new Int16Array(samples.length/2);
+      for(let i=0,j=0;i<samples.length;i+=2,j++){L[j]=samples[i];R[j]=samples[i+1];}
+      for(let i=0;i<L.length;i+=bs){const b=enc.encodeBuffer(L.subarray(i,i+bs),R.subarray(i,i+bs));if(b.length>0)data.push(new Uint8Array(b));}
+    }
+    const f=enc.flush();if(f.length>0)data.push(new Uint8Array(f));
+    return data;
+  }
+  async function downloadZip(results){
+    const zip=new JSZip();
+    results.forEach(r=>zip.file(r.name,r.blob));
+    const zb=await zip.generateAsync({type:'blob'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(zb);a.download='wav2mp3-output.zip';a.click();
+    URL.revokeObjectURL(a.href);
+  }
+})();
+</script>
+<script>
+  const glow=document.getElementById('cursor-glow');
+  let gx=-200,gy=-200,tx=-200,ty=-200;
+  document.addEventListener('mousemove',e=>{tx=e.clientX;ty=e.clientY;});
+  function aglow(){gx+=(tx-gx)*0.06;gy+=(ty-gy)*0.06;glow.style.left=gx+'px';glow.style.top=gy+'px';requestAnimationFrame(aglow);}
+  aglow();
+  const nav=document.getElementById('navbar');
+  window.addEventListener('scroll',()=>{nav.classList.toggle('scrolled',window.scrollY>60);});
+</script>
+</body>
+</html>
