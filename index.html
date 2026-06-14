@@ -269,6 +269,43 @@
             transform: translateX(4px);
         }
 
+        .btn-learn {
+            background: linear-gradient(135deg, rgba(255, 193, 77, 0.12), rgba(77, 255, 142, 0.12));
+            color: #c8ffe0;
+            border: 1px solid rgba(255, 193, 77, 0.15);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .btn-learn:hover {
+            background: linear-gradient(135deg, rgba(255, 193, 77, 0.22), rgba(77, 255, 142, 0.22));
+            border-color: rgba(255, 193, 77, 0.35);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 48px rgba(77, 255, 142, 0.12);
+        }
+
+        .btn-learn .arrow {
+            display: inline-block;
+            transition: transform 0.35s ease;
+        }
+
+        .btn-learn:hover .arrow {
+            transform: translateX(4px);
+        }
+
+        .hero-sub-buttons {
+            margin-top: 16px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            animation: fadeUp 1s 1.0s both;
+        }
+
+        .btn-sm {
+            padding: 8px 20px;
+            font-size: 0.7rem;
+        }
+
         .btn-outline {
             background: transparent;
             color: rgba(255, 255, 255, 0.4);
@@ -510,27 +547,32 @@
         <div class="nav-logo">Portfolio<span>·</span>2025</div>
         <ul class="nav-links">
             <li><a href="#about">关于</a></li>
-            <li><a href="demos.html" class="active">演示</a></li>
-            <li><a href="#">项目</a></li>
+            <li><a href="demos.html">演示</a></li>
+            <li><a href="learn.html">学习</a></li>
             <li><a href="#">联系</a></li>
         </ul>
     </nav>
 
     <!-- ===== HERO ===== -->
     <section class="hero" id="hero">
-        <p class="hero-subtitle">Interactive 3D · Geometry · Physics</p>
+        <p class="hero-subtitle">Interactive 3D · Geometry · Physics · Biology</p>
         <h1 class="hero-title">
             用 <span class="highlight">三维</span> 理解世界
         </h1>
         <p class="hero-desc">
-            这里是交互式教学演示的集合 — 将抽象的数学与物理概念<br />
-            转化为可视、可触的 3D 体验。
+            交互式教学演示与学习资料 — 将抽象的数学、物理与生物概念<br />
+            转化为可视、可触的 3D 体验与精炼的知识总结。
         </p>
         <div class="hero-buttons">
             <a href="demos.html" class="btn btn-demo">
                 探索演示 <span class="arrow">→</span>
             </a>
-            <a href="#about" class="btn btn-outline">了解更多</a>
+            <a href="learn.html" class="btn btn-learn">
+                学习资料 <span class="arrow">→</span>
+            </a>
+        </div>
+        <div class="hero-sub-buttons">
+            <a href="#about" class="btn btn-outline btn-sm">了解更多</a>
         </div>
 
         <div class="scroll-indicator">
