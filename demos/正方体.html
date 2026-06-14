@@ -1,25 +1,44 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>立体几何模拟 - 过直线n作平面与β垂直/平行</title>
+    <title>绔嬩綋鍑犱綍妯℃嫙 - 杩囩洿绾縩浣滃钩闈笌尾鍨傜洿/骞宠</title>
     <style>
         :root {
-            --bg: #1a1a2e;
-            --panel-bg: #16213e;
-            --text: #e0e0e0;
+            --bg: #0a0e17;
+            --panel-bg: rgba(12, 16, 28, 0.92);
+            --text: #e0e4ee;
             --accent: #4da6ff;
             --accent2: #ff6b6b;
             --green: #4cff88;
             --yellow: #ffcc33;
             --purple: #b066ff;
-            --slider-track: #2a3a55;
-            --border: #2a3a55;
-            --btn-bg: #1e3a5f;
-            --btn-hover: #2a5090;
-            --btn-active: #3a6ad4;
+            --slider-track: #1e2a3e;
+            --border: rgba(255, 255, 255, 0.06);
+            --btn-bg: rgba(255, 255, 255, 0.05);
+            --btn-hover: rgba(77, 166, 255, 0.15);
+            --btn-active: rgba(77, 166, 255, 0.25);
         }
+
+        /* ===== NOISE OVERLAY ===== */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            pointer-events: none;
+            opacity: 0.025;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\");
+            background-repeat: repeat;
+            background-size: 256px 256px;
+        }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 
         * {
             margin: 0;
@@ -36,6 +55,7 @@
             width: 100vw;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
         }
 
         #app-container {
@@ -50,7 +70,7 @@
             min-width: 0;
             position: relative;
             cursor: grab;
-            background: radial-gradient(ellipse at center, #1e2a3a 0%, #0d1117 100%);
+            background: radial-gradient(ellipse at center, #141c2a 0%, #080b12 100%);
         }
         #canvas-wrapper:active {
             cursor: grabbing;
@@ -63,15 +83,17 @@
             width: 380px;
             min-width: 380px;
             background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border-left: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             overflow-y: auto;
             overflow-x: hidden;
             z-index: 10;
-            padding: 20px 18px;
-            gap: 16px;
-            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.4);
+            padding: 24px 20px;
+            gap: 14px;
+            box-shadow: -8px 0 40px rgba(0, 0, 0, 0.6);
         }
 
         #panel h2 {
@@ -106,28 +128,29 @@
         .btn-group button {
             flex: 1;
             min-width: 55px;
-            padding: 10px 8px;
-            border: 2px solid var(--border);
-            border-radius: 10px;
-            background: var(--btn-bg);
-            color: #ccc;
+            padding: 12px 8px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.04);
+            color: #99aacb;
             cursor: pointer;
-            font-size: 0.85em;
-            font-weight: 600;
-            transition: all 0.2s;
+            font-size: 0.82em;
+            font-weight: 500;
+            transition: all 0.25s ease;
             letter-spacing: 0.3px;
             white-space: nowrap;
         }
         .btn-group button:hover {
             background: var(--btn-hover);
-            border-color: #5588cc;
+            border-color: rgba(77, 166, 255, 0.3);
             color: #fff;
+            transform: translateY(-1px);
         }
         .btn-group button.active {
-            background: var(--btn-active);
-            border-color: #6699ee;
+            background: rgba(77, 166, 255, 0.15);
+            border-color: rgba(77, 166, 255, 0.4);
             color: #fff;
-            box-shadow: 0 0 16px rgba(60, 120, 220, 0.4);
+            box-shadow: 0 4px 20px rgba(77, 166, 255, 0.15);
         }
 
         .slider-group {
@@ -152,21 +175,26 @@
         .slider-group input[type="range"] {
             -webkit-appearance: none;
             width: 100%;
-            height: 8px;
-            border-radius: 4px;
+            height: 6px;
+            border-radius: 3px;
             background: var(--slider-track);
             outline: none;
             cursor: pointer;
+            transition: background 0.2s;
         }
         .slider-group input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 26px;
-            height: 26px;
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
             background: #fff;
-            border: 3px solid var(--accent);
+            border: 2px solid var(--accent);
             cursor: pointer;
-            box-shadow: 0 0 10px rgba(77, 166, 255, 0.5);
+            box-shadow: 0 0 12px rgba(77, 166, 255, 0.3);
+            transition: transform 0.2s;
+        }
+        .slider-group input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
         }
 
         .indicator-row {
@@ -303,47 +331,47 @@
     <div id="app-container">
         <div id="canvas-wrapper"></div>
         <div id="panel">
-            <h2>📐 立体几何模拟</h2>
-            <p class="subtitle">m⊥n &nbsp;|&nbsp; α//β &nbsp;|&nbsp; 过n作平面γ绕n旋转</p>
+            <h2>馃搻 绔嬩綋鍑犱綍妯℃嫙</h2>
+            <p class="subtitle">m鈯 &nbsp;|&nbsp; 伪//尾 &nbsp;|&nbsp; 杩噉浣滃钩闈⑽崇粫n鏃嬭浆</p>
 
-            <div class="section-label">🔽 选择条件（选项）</div>
+            <div class="section-label">馃斀 閫夋嫨鏉′欢锛堥€夐」锛?/div>
             <div class="btn-group" id="condition-btns">
-                <button data-cond="A">选项 A<br><small>m // α</small></button>
-                <button data-cond="B">选项 B<br><small>m与α成60°</small></button>
-                <button data-cond="C" class="active">选项 C<br><small>m ⊥ α</small></button>
+                <button data-cond="A">閫夐」 A<br><small>m // 伪</small></button>
+                <button data-cond="B">閫夐」 B<br><small>m涓幬辨垚60掳</small></button>
+                <button data-cond="C" class="active">閫夐」 C<br><small>m 鈯?伪</small></button>
             </div>
 
-            <div class="section-label">🎚️ 旋转过n的平面 γ（绕n轴）</div>
+            <div class="section-label">馃帤锔?鏃嬭浆杩噉鐨勫钩闈?纬锛堢粫n杞达級</div>
             <div class="slider-group">
-                <div class="slider-header"><span>γ旋转角 θ</span><span class="val" id="theta-val">45°</span></div>
+                <div class="slider-header"><span>纬鏃嬭浆瑙?胃</span><span class="val" id="theta-val">45掳</span></div>
                 <input type="range" id="theta-slider" min="0" max="360" value="45" step="0.5">
             </div>
 
-            <div class="section-label">🧭 n在⊥m平面内的方向 φ（展示不确定性）</div>
+            <div class="section-label">馃Л n鍦ㄢ姤m骞抽潰鍐呯殑鏂瑰悜 蠁锛堝睍绀轰笉纭畾鎬э級</div>
             <div class="slider-group">
-                <div class="slider-header"><span>n方向角 φ</span><span class="val" id="phi-val">0°</span></div>
+                <div class="slider-header"><span>n鏂瑰悜瑙?蠁</span><span class="val" id="phi-val">0掳</span></div>
                 <input type="range" id="phi-slider" min="0" max="360" value="0" step="0.5">
             </div>
 
             <div class="indicator-row">
                 <span class="indicator-dot" id="status-dot" style="background:#ffcc33;box-shadow:0 0 12px #ffcc33;"></span>
-                <span class="indicator-text" id="status-text">γ与β的关系：—</span>
+                <span class="indicator-text" id="status-text">纬涓幬茬殑鍏崇郴锛氣€?/span>
             </div>
-            <div class="highlight-box none" id="highlight-box">旋转γ观察何时⊥β</div>
+            <div class="highlight-box none" id="highlight-box">鏃嬭浆纬瑙傚療浣曟椂鈯ノ?/div>
 
             <div class="info-card" id="info-card">
-                <strong>当前条件分析：</strong><br>
-                <span id="analysis-text">加载中…</span>
+                <strong>褰撳墠鏉′欢鍒嗘瀽锛?/strong><br>
+                <span id="analysis-text">鍔犺浇涓€?/span>
             </div>
 
             <div class="legend-row">
-                <span class="legend-item"><span class="legend-swatch" style="background:#ff4444;"></span> m直线</span>
-                <span class="legend-item"><span class="legend-swatch" style="background:#4488ff;"></span> n直线</span>
-                <span class="legend-item"><span class="legend-swatch" style="background:rgba(100,150,255,0.5);"></span> α平面</span>
-                <span class="legend-item"><span class="legend-swatch" style="background:rgba(60,100,220,0.6);"></span> β平面</span>
-                <span class="legend-item"><span class="legend-swatch" style="background:#ffcc33;"></span> γ平面(过n)</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ff4444;"></span> m鐩寸嚎</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#4488ff;"></span> n鐩寸嚎</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:rgba(100,150,255,0.5);"></span> 伪骞抽潰</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:rgba(60,100,220,0.6);"></span> 尾骞抽潰</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ffcc33;"></span> 纬骞抽潰(杩噉)</span>
             </div>
-            <p style="font-size:0.7em;color:#667;text-align:center;">🖱️ 拖拽旋转视角 | 滚轮缩放 | 右键平移</p>
+            <p style="font-size:0.7em;color:#667;text-align:center;">馃柋锔?鎷栨嫿鏃嬭浆瑙嗚 | 婊氳疆缂╂斁 | 鍙抽敭骞崇Щ</p>
         </div>
     </div>
 
@@ -360,7 +388,7 @@
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        // ==================== DOM元素 ====================
+        // ==================== DOM鍏冪礌 ====================
         const canvasWrapper = document.getElementById('canvas-wrapper');
         const thetaSlider = document.getElementById('theta-slider');
         const phiSlider = document.getElementById('phi-slider');
@@ -372,12 +400,11 @@
         const analysisText = document.getElementById('analysis-text');
         const conditionBtns = document.querySelectorAll('#condition-btns button');
 
-        // ==================== 状态 ====================
+        // ==================== 鐘舵€?====================
         let currentCondition = 'C'; // 'A' | 'B' | 'C'
-        let theta = 45; // γ绕n旋转角度（度）
-        let phi = 0; // n在⊥m平面内的方向角（度）
+        let theta = 45; // 纬缁昻鏃嬭浆瑙掑害锛堝害锛?        let phi = 0; // n鍦ㄢ姤m骞抽潰鍐呯殑鏂瑰悜瑙掞紙搴︼級
 
-        // ==================== Three.js 初始化 ====================
+        // ==================== Three.js 鍒濆鍖?====================
         const scene = new THREE.Scene();
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -402,7 +429,7 @@
         controls.maxPolarAngle = Math.PI * 0.85;
         controls.update();
 
-        // ==================== 光照 ====================
+        // ==================== 鍏夌収 ====================
         const ambientLight = new THREE.AmbientLight('#bcc8dd', 2.5);
         scene.add(ambientLight);
         const sunLight = new THREE.DirectionalLight('#ffffff', 4);
@@ -422,19 +449,18 @@
         fillLight.position.set(-3, 2, -4);
         scene.add(fillLight);
 
-        // ==================== 场景元素 ====================
-        // 网格地面（参考）
+        // ==================== 鍦烘櫙鍏冪礌 ====================
+        // 缃戞牸鍦伴潰锛堝弬鑰冿級
         const gridHelper = new THREE.GridHelper(10, 20, '#334466', '#1a2a3a');
         gridHelper.position.y = -1.5;
         scene.add(gridHelper);
 
-        // 小网格在原点
+        // 灏忕綉鏍煎湪鍘熺偣
         const gridHelper2 = new THREE.GridHelper(6, 12, '#445577', '#1a2a3a');
         gridHelper2.position.y = 0;
         scene.add(gridHelper2);
 
-        // α平面（半透明，y=-1.5）
-        const alphaGeom = new THREE.PlaneGeometry(9, 9);
+        // 伪骞抽潰锛堝崐閫忔槑锛寉=-1.5锛?        const alphaGeom = new THREE.PlaneGeometry(9, 9);
         const alphaMat = new THREE.MeshStandardMaterial({
             color: '#6496ff',
             side: THREE.DoubleSide,
@@ -451,8 +477,7 @@
         alphaPlane.renderOrder = 1;
         scene.add(alphaPlane);
 
-        // β平面（半透明，y=1.5，平行于α）
-        const betaGeom = new THREE.PlaneGeometry(9, 9);
+        // 尾骞抽潰锛堝崐閫忔槑锛寉=1.5锛屽钩琛屼簬伪锛?        const betaGeom = new THREE.PlaneGeometry(9, 9);
         const betaMat = new THREE.MeshStandardMaterial({
             color: '#3c64dc',
             side: THREE.DoubleSide,
@@ -469,8 +494,7 @@
         betaPlane.renderOrder = 2;
         scene.add(betaPlane);
 
-        // γ平面（过n，绕n旋转）- 将在update中动态设置
-        const gammaGeom = new THREE.PlaneGeometry(5.5, 5.5);
+        // 纬骞抽潰锛堣繃n锛岀粫n鏃嬭浆锛? 灏嗗湪update涓姩鎬佽缃?        const gammaGeom = new THREE.PlaneGeometry(5.5, 5.5);
         const gammaMat = new THREE.MeshStandardMaterial({
             color: '#ffcc33',
             side: THREE.DoubleSide,
@@ -486,8 +510,7 @@
         gammaPlane.receiveShadow = true;
         scene.add(gammaPlane);
 
-        // γ平面的边框（线框）
-        const gammaEdgeGeom = new THREE.EdgesGeometry(gammaGeom);
+        // 纬骞抽潰鐨勮竟妗嗭紙绾挎锛?        const gammaEdgeGeom = new THREE.EdgesGeometry(gammaGeom);
         const gammaEdgeMat = new THREE.LineBasicMaterial({
             color: '#ffaa00',
             transparent: true,
@@ -497,7 +520,7 @@
         const gammaEdge = new THREE.LineSegments(gammaEdgeGeom, gammaEdgeMat);
         gammaPlane.add(gammaEdge);
 
-        // ==================== 辅助函数：创建直线（圆柱体） ====================
+        // ==================== 杈呭姪鍑芥暟锛氬垱寤虹洿绾匡紙鍦嗘煴浣擄級 ====================
         function createLineCylinder(start, end, radius, colorHex, opacity = 1) {
             const dir = new THREE.Vector3().subVectors(end, start);
             const length = dir.length();
@@ -513,7 +536,7 @@
             });
             const mesh = new THREE.Mesh(geom, mat);
             mesh.position.copy(mid);
-            // 默认圆柱沿y轴，旋转到dir方向
+            // 榛樿鍦嗘煴娌縴杞达紝鏃嬭浆鍒癲ir鏂瑰悜
             const yAxis = new THREE.Vector3(0, 1, 0);
             const q = new THREE.Quaternion().setFromUnitVectors(yAxis, dir.normalize());
             mesh.setRotationFromQuaternion(q);
@@ -522,16 +545,14 @@
             return mesh;
         }
 
-        // ==================== 动态对象容器 ====================
+        // ==================== 鍔ㄦ€佸璞″鍣?====================
         const dynamicGroup = new THREE.Group();
         scene.add(dynamicGroup);
 
-        // 当前m和n的网格引用
-        let mLineMesh = null;
+        // 褰撳墠m鍜宯鐨勭綉鏍煎紩鐢?        let mLineMesh = null;
         let nLineMesh = null;
 
-        // 小球标记n上的点
-        const sphereGeomSmall = new THREE.SphereGeometry(0.15, 24, 24);
+        // 灏忕悆鏍囪n涓婄殑鐐?        const sphereGeomSmall = new THREE.SphereGeometry(0.15, 24, 24);
         const sphereMatN = new THREE.MeshStandardMaterial({ color: '#4488ff', roughness: 0.2, metalness: 0.3 });
         const nPointSphere = new THREE.Mesh(sphereGeomSmall, sphereMatN);
         nPointSphere.castShadow = true;
@@ -542,7 +563,7 @@
         mPointSphere.castShadow = true;
         dynamicGroup.add(mPointSphere);
 
-        // ==================== 箭头标记β的法向量方向 ====================
+        // ==================== 绠ご鏍囪尾鐨勬硶鍚戦噺鏂瑰悜 ====================
         function createSmallArrow(from, direction, length, colorHex) {
             const group = new THREE.Group();
             const shaftGeom = new THREE.CylinderGeometry(0.06, 0.06, length * 0.75, 12);
@@ -567,12 +588,11 @@
         }
 
         let betaNormalArrow = null;
-        const betaNormalDir = new THREE.Vector3(0, 1, 0); // β的法向量沿y轴
-
+        const betaNormalDir = new THREE.Vector3(0, 1, 0); // 尾鐨勬硶鍚戦噺娌縴杞?
         function updateBetaNormalArrow() {
             if (betaNormalArrow) {
                 dynamicGroup.remove(betaNormalArrow);
-                // 递归清理
+                // 閫掑綊娓呯悊
                 betaNormalArrow.traverse(c => {
                     if (c.geometry && c !== betaNormalArrow) c.geometry.dispose();
                     if (c.material) {
@@ -592,47 +612,37 @@
         }
         updateBetaNormalArrow();
 
-        // ==================== 计算函数 ====================
+        // ==================== 璁＄畻鍑芥暟 ====================
         function getMDirection(condition, phiLocal) {
-            // 返回m的单位方向向量
-            const phiRad = THREE.MathUtils.degToRad(phiLocal);
+            // 杩斿洖m鐨勫崟浣嶆柟鍚戝悜閲?            const phiRad = THREE.MathUtils.degToRad(phiLocal);
             if (condition === 'C') {
-                // m⊥α，α法向量沿y轴，所以m沿y轴
-                return new THREE.Vector3(0, 1, 0);
+                // m鈯ノ憋紝伪娉曞悜閲忔部y杞达紝鎵€浠娌縴杞?                return new THREE.Vector3(0, 1, 0);
             } else if (condition === 'A') {
-                // m//α，α是水平面(y=const)，m在xz平面内
-                // n在垂直于m的平面内，由phi参数化
-                // 设定m在xz平面，方向需要⊥n
-                // n由phi决定：n在xy平面内（垂直于z轴的方向不固定）
-                // 为了一致性，在条件A中，n在xy平面内：(cos(phi), sin(phi), 0)
-                // m在xz平面且⊥n：m·n = m_x*cos(phi) + 0*sin(phi) + m_z*0 = m_x*cos(phi)=0
+                // m//伪锛屛辨槸姘村钩闈?y=const)锛宮鍦▁z骞抽潰鍐?                // n鍦ㄥ瀭鐩翠簬m鐨勫钩闈㈠唴锛岀敱phi鍙傛暟鍖?                // 璁惧畾m鍦▁z骞抽潰锛屾柟鍚戦渶瑕佲姤n
+                // n鐢眕hi鍐冲畾锛歯鍦▁y骞抽潰鍐咃紙鍨傜洿浜巣杞寸殑鏂瑰悜涓嶅浐瀹氾級
+                // 涓轰簡涓€鑷存€э紝鍦ㄦ潯浠禔涓紝n鍦▁y骞抽潰鍐咃細(cos(phi), sin(phi), 0)
+                // m鍦▁z骞抽潰涓斺姤n锛歮路n = m_x*cos(phi) + 0*sin(phi) + m_z*0 = m_x*cos(phi)=0
                 const cosPhi = Math.cos(phiRad);
                 if (Math.abs(cosPhi) < 0.001) {
-                    // n沿y轴，m在xz平面任意，选x轴
-                    return new THREE.Vector3(1, 0, 0);
+                    // n娌縴杞达紝m鍦▁z骞抽潰浠绘剰锛岄€墄杞?                    return new THREE.Vector3(1, 0, 0);
                 }
-                // m沿z轴（在xz平面且⊥n）
-                return new THREE.Vector3(0, 0, 1);
+                // m娌縵杞达紙鍦▁z骞抽潰涓斺姤n锛?                return new THREE.Vector3(0, 0, 1);
             } else if (condition === 'B') {
-                // m与α成60°，α是水平面
-                // m在yz平面内，与y轴成30°（与水平面成60°）
-                const mRef = new THREE.Vector3(0, Math.cos(Math.PI / 6), Math.sin(Math.PI / 6)).normalize();
+                // m涓幬辨垚60掳锛屛辨槸姘村钩闈?                // m鍦▂z骞抽潰鍐咃紝涓巠杞存垚30掳锛堜笌姘村钩闈㈡垚60掳锛?                const mRef = new THREE.Vector3(0, Math.cos(Math.PI / 6), Math.sin(Math.PI / 6)).normalize();
                 return mRef;
             }
             return new THREE.Vector3(0, 1, 0);
         }
 
         function getNDirection(condition, phiLocal, mDir) {
-            // n⊥m，在垂直于m的平面内由phi参数化
-            const phiRad = THREE.MathUtils.degToRad(phiLocal);
-            // 在⊥m的平面内找两个正交基
+            // n鈯锛屽湪鍨傜洿浜巑鐨勫钩闈㈠唴鐢眕hi鍙傛暟鍖?            const phiRad = THREE.MathUtils.degToRad(phiLocal);
+            // 鍦ㄢ姤m鐨勫钩闈㈠唴鎵句袱涓浜ゅ熀
             const mNorm = mDir.clone().normalize();
-            // 找第一个基向量u（⊥m）
-            let u = new THREE.Vector3(1, 0, 0);
+            // 鎵剧涓€涓熀鍚戦噺u锛堚姤m锛?            let u = new THREE.Vector3(1, 0, 0);
             if (Math.abs(u.dot(mNorm)) > 0.95) {
                 u = new THREE.Vector3(0, 0, 1);
             }
-            // u在⊥m平面内的投影
+            // u鍦ㄢ姤m骞抽潰鍐呯殑鎶曞奖
             u = u.clone().sub(mNorm.clone().multiplyScalar(u.dot(mNorm))).normalize();
             const v = new THREE.Vector3().crossVectors(mNorm, u).normalize();
             // n = cos(phi)*u + sin(phi)*v
@@ -641,8 +651,7 @@
         }
 
         function getGammaNormal(nDir, thetaLocal) {
-            // γ的法向量在垂直于nDir的平面内，由theta参数化
-            const thetaRad = THREE.MathUtils.degToRad(thetaLocal);
+            // 纬鐨勬硶鍚戦噺鍦ㄥ瀭鐩翠簬nDir鐨勫钩闈㈠唴锛岀敱theta鍙傛暟鍖?            const thetaRad = THREE.MathUtils.degToRad(thetaLocal);
             const nNorm = nDir.clone().normalize();
             let u = new THREE.Vector3(0, 1, 0);
             if (Math.abs(u.dot(nNorm)) > 0.95) {
@@ -654,10 +663,9 @@
             return gammaN.normalize();
         }
 
-        // ==================== 更新场景 ====================
+        // ==================== 鏇存柊鍦烘櫙 ====================
         function updateScene() {
-            // 清理旧直线
-            if (mLineMesh) {
+            // 娓呯悊鏃х洿绾?            if (mLineMesh) {
                 dynamicGroup.remove(mLineMesh);
                 mLineMesh.traverse(c => {
                     if (c.geometry && c !== mLineMesh) c.geometry.dispose();
@@ -684,40 +692,36 @@
             const nDir = getNDirection(currentCondition, phi, mDir);
             const gammaN = getGammaNormal(nDir, theta);
 
-            // 原点
+            // 鍘熺偣
             const origin = new THREE.Vector3(0, 0, 0);
 
-            // m直线（从原点沿mDir延伸，长度5）
-            const mStart = origin.clone().addScaledVector(mDir, -2.5);
+            // m鐩寸嚎锛堜粠鍘熺偣娌縨Dir寤朵几锛岄暱搴?锛?            const mStart = origin.clone().addScaledVector(mDir, -2.5);
             const mEnd = origin.clone().addScaledVector(mDir, 2.5);
             mLineMesh = createLineCylinder(mStart, mEnd, 0.09, '#ff4444', 1);
             mLineMesh.renderOrder = 5;
             dynamicGroup.add(mLineMesh);
 
-            // n直线（从原点沿nDir延伸，长度6）
-            const nStart = origin.clone().addScaledVector(nDir, -3);
+            // n鐩寸嚎锛堜粠鍘熺偣娌縩Dir寤朵几锛岄暱搴?锛?            const nStart = origin.clone().addScaledVector(nDir, -3);
             const nEnd = origin.clone().addScaledVector(nDir, 3);
             nLineMesh = createLineCylinder(nStart, nEnd, 0.09, '#4488ff', 1);
             nLineMesh.renderOrder = 5;
             dynamicGroup.add(nLineMesh);
 
-            // 更新标记球
-            nPointSphere.position.copy(origin);
+            // 鏇存柊鏍囪鐞?            nPointSphere.position.copy(origin);
             mPointSphere.position.copy(origin);
 
-            // 更新γ平面
+            // 鏇存柊纬骞抽潰
             gammaPlane.position.copy(origin);
             const defaultNormal = new THREE.Vector3(0, 0, 1);
             const qGamma = new THREE.Quaternion().setFromUnitVectors(defaultNormal, gammaN);
             gammaPlane.setRotationFromQuaternion(qGamma);
 
-            // 检测γ与β的关系
-            const betaN = new THREE.Vector3(0, 1, 0); // β的法向量
+            // 妫€娴嬑充笌尾鐨勫叧绯?            const betaN = new THREE.Vector3(0, 1, 0); // 尾鐨勬硶鍚戦噺
             const dotVal = Math.abs(gammaN.dot(betaN));
-            const isPerp = dotVal < 0.025; // γ⊥β (法向量垂直)
-            const isParallel = dotVal > 0.975; // γ//β (法向量平行)
+            const isPerp = dotVal < 0.025; // 纬鈯ノ?(娉曞悜閲忓瀭鐩?
+            const isParallel = dotVal > 0.975; // 纬//尾 (娉曞悜閲忓钩琛?
 
-            // 更新γ颜色
+            // 鏇存柊纬棰滆壊
             let gammaColor, gammaOpacity;
             if (isPerp) {
                 gammaColor = '#4cff88';
@@ -728,9 +732,9 @@
                 gammaEdgeMat.opacity = 0.9;
                 statusDot.style.background = '#4cff88';
                 statusDot.style.boxShadow = '0 0 16px #4cff88';
-                statusText.textContent = 'γ⊥β ✓ 平面γ与β垂直';
+                statusText.textContent = '纬鈯ノ?鉁?骞抽潰纬涓幬插瀭鐩?;
                 highlightBox.className = 'highlight-box perp';
-                highlightBox.textContent = '✅ γ ⊥ β — 过n的平面与β垂直！';
+                highlightBox.textContent = '鉁?纬 鈯?尾 鈥?杩噉鐨勫钩闈笌尾鍨傜洿锛?;
             } else if (isParallel) {
                 gammaColor = '#b066ff';
                 gammaOpacity = 0.55;
@@ -740,9 +744,9 @@
                 gammaEdgeMat.opacity = 0.9;
                 statusDot.style.background = '#b066ff';
                 statusDot.style.boxShadow = '0 0 16px #b066ff';
-                statusText.textContent = 'γ//β — 平面γ与β平行';
+                statusText.textContent = '纬//尾 鈥?骞抽潰纬涓幬插钩琛?;
                 highlightBox.className = 'highlight-box parallel';
-                highlightBox.textContent = '🟣 γ // β — 过n的平面与β平行！';
+                highlightBox.textContent = '馃煟 纬 // 尾 鈥?杩噉鐨勫钩闈笌尾骞宠锛?;
             } else {
                 gammaColor = '#ffcc33';
                 gammaOpacity = 0.5;
@@ -753,24 +757,23 @@
                 statusDot.style.background = '#ffcc33';
                 statusDot.style.boxShadow = '0 0 12px #ffcc33';
                 statusText.textContent =
-                    `γ与β的关系：夹角 ${Math.round(THREE.MathUtils.radToDeg(Math.acos(Math.min(dotVal, 1))))}°（法向量夹角 ${Math.round(THREE.MathUtils.radToDeg(Math.acos(Math.min(dotVal, 1))))}°）`;
+                    `纬涓幬茬殑鍏崇郴锛氬す瑙?${Math.round(THREE.MathUtils.radToDeg(Math.acos(Math.min(dotVal, 1))))}掳锛堟硶鍚戦噺澶硅 ${Math.round(THREE.MathUtils.radToDeg(Math.acos(Math.min(dotVal, 1))))}掳锛塦;
                 highlightBox.className = 'highlight-box none';
-                highlightBox.textContent = '🟡 旋转γ，观察何时与β垂直或平行';
+                highlightBox.textContent = '馃煛 鏃嬭浆纬锛岃瀵熶綍鏃朵笌尾鍨傜洿鎴栧钩琛?;
             }
             gammaMat.needsUpdate = true;
             gammaEdgeMat.needsUpdate = true;
 
-            // 更新n与β法向量的关系信息
-            const nDotBetaN = Math.abs(nDir.dot(betaN));
+            // 鏇存柊n涓幬叉硶鍚戦噺鐨勫叧绯讳俊鎭?            const nDotBetaN = Math.abs(nDir.dot(betaN));
             const nIsParallelToBetaN = nDotBetaN > 0.975;
             const nIsPerpToBetaN = nDotBetaN < 0.025;
 
-            // 更新解析文字
+            // 鏇存柊瑙ｆ瀽鏂囧瓧
             updateAnalysis(mDir, nDir, gammaN, isPerp, isParallel, nIsParallelToBetaN, nIsPerpToBetaN, dotVal);
 
-            // 更新标签显示
-            thetaValEl.textContent = Math.round(theta) + '°';
-            phiValEl.textContent = Math.round(phi) + '°';
+            // 鏇存柊鏍囩鏄剧ず
+            thetaValEl.textContent = Math.round(theta) + '掳';
+            phiValEl.textContent = Math.round(phi) + '掳';
         }
 
         function updateAnalysis(mDir, nDir, gammaN, isPerp, isParallel, nIsParallelToBetaN, nIsPerpToBetaN, dotVal) {
@@ -778,61 +781,61 @@
             const betaN = new THREE.Vector3(0, 1, 0);
 
             if (currentCondition === 'C') {
-                analysis += '<strong>条件C：m⊥α</strong>（m沿y轴，即β的法向量方向）<br>';
-                analysis += '∵ α//β 且 m⊥α，∴ m⊥β<br>';
-                analysis += '∵ m⊥n，∴ n在水平面内（n//β）<br>';
-                analysis += 'n不平行于β的法向量（n⊥y轴），<br>';
-                analysis += '∴ 过n且⊥β的平面由<b>n和β法向量(m方向)</b>张成，<br>';
-                analysis += '<span class="correct">✅ 唯一确定！选项C正确。</span><br>';
-                analysis += '同理，过n且//β的平面也唯一（γ法向量//y轴时），<br>';
-                analysis += '<span class="correct">✅ 选项D也正确。</span><br>';
+                analysis += '<strong>鏉′欢C锛歮鈯ノ?/strong>锛坢娌縴杞达紝鍗澄茬殑娉曞悜閲忔柟鍚戯級<br>';
+                analysis += '鈭?伪//尾 涓?m鈯ノ憋紝鈭?m鈯ノ?br>';
+                analysis += '鈭?m鈯锛屸埓 n鍦ㄦ按骞抽潰鍐咃紙n//尾锛?br>';
+                analysis += 'n涓嶅钩琛屼簬尾鐨勬硶鍚戦噺锛坣鈯杞达級锛?br>';
+                analysis += '鈭?杩噉涓斺姤尾鐨勫钩闈㈢敱<b>n鍜屛叉硶鍚戦噺(m鏂瑰悜)</b>寮犳垚锛?br>';
+                analysis += '<span class="correct">鉁?鍞竴纭畾锛侀€夐」C姝ｇ‘銆?/span><br>';
+                analysis += '鍚岀悊锛岃繃n涓?/尾鐨勫钩闈篃鍞竴锛埼虫硶鍚戦噺//y杞存椂锛夛紝<br>';
+                analysis += '<span class="correct">鉁?閫夐」D涔熸纭€?/span><br>';
                 if (isPerp) {
-                    analysis += '<br><span class="correct">👉 当前γ正处于⊥β的位置！（绿色高亮）</span>';
+                    analysis += '<br><span class="correct">馃憠 褰撳墠纬姝ｅ浜庘姤尾鐨勪綅缃紒锛堢豢鑹查珮浜級</span>';
                 } else if (isParallel) {
-                    analysis += '<br><span class="correct">👉 当前γ正处于//β的位置！（紫色高亮）</span>';
+                    analysis += '<br><span class="correct">馃憠 褰撳墠纬姝ｅ浜?/尾鐨勪綅缃紒锛堢传鑹查珮浜級</span>';
                 }
             } else if (currentCondition === 'A') {
-                analysis += '<strong>条件A：m//α</strong>（m在水平面内）<br>';
-                analysis += 'm⊥n，但n的方向<b>不确定</b>（在⊥m的平面内）<br>';
+                analysis += '<strong>鏉′欢A锛歮//伪</strong>锛坢鍦ㄦ按骞抽潰鍐咃級<br>';
+                analysis += 'm鈯锛屼絾n鐨勬柟鍚?b>涓嶇‘瀹?/b>锛堝湪鈯鐨勫钩闈㈠唴锛?br>';
                 if (nIsParallelToBetaN) {
-                    analysis += '⚠️ 当前φ使n//β法向量(y轴)，<br>';
-                    analysis += '过n的<b>任何</b>平面都包含y轴方向→都⊥β<br>';
-                    analysis += '<span class="wrong">❌ 无穷多解！不唯一。</span><br>';
+                    analysis += '鈿狅笍 褰撳墠蠁浣縩//尾娉曞悜閲?y杞?锛?br>';
+                    analysis += '杩噉鐨?b>浠讳綍</b>骞抽潰閮藉寘鍚珁杞存柟鍚戔啋閮解姤尾<br>';
+                    analysis += '<span class="wrong">鉂?鏃犵┓澶氳В锛佷笉鍞竴銆?/span><br>';
                 } else if (nIsPerpToBetaN) {
-                    analysis += '当前φ使n⊥β法向量（n//β），<br>';
-                    analysis += '过n且⊥β的平面由n和y轴张成→唯一<br>';
-                    analysis += '但φ可变，题目未固定n方向，<br>';
-                    analysis += '<span class="wrong">❌ 条件不足，不能保证唯一性。选项A错误。</span><br>';
+                    analysis += '褰撳墠蠁浣縩鈯ノ叉硶鍚戦噺锛坣//尾锛夛紝<br>';
+                    analysis += '杩噉涓斺姤尾鐨勫钩闈㈢敱n鍜寉杞村紶鎴愨啋鍞竴<br>';
+                    analysis += '浣喯嗗彲鍙橈紝棰樼洰鏈浐瀹歯鏂瑰悜锛?br>';
+                    analysis += '<span class="wrong">鉂?鏉′欢涓嶈冻锛屼笉鑳戒繚璇佸敮涓€鎬с€傞€夐」A閿欒銆?/span><br>';
                 } else {
-                    analysis += '当前φ使n既不平行也不垂直于β法向量，<br>';
-                    analysis += '过n且⊥β的平面由n和y轴张成→唯一<br>';
-                    analysis += '但φ可变，n可能平行于y轴（无穷多解），<br>';
-                    analysis += '<span class="wrong">❌ 条件不足，选项A错误。</span><br>';
+                    analysis += '褰撳墠蠁浣縩鏃笉骞宠涔熶笉鍨傜洿浜幬叉硶鍚戦噺锛?br>';
+                    analysis += '杩噉涓斺姤尾鐨勫钩闈㈢敱n鍜寉杞村紶鎴愨啋鍞竴<br>';
+                    analysis += '浣喯嗗彲鍙橈紝n鍙兘骞宠浜巠杞达紙鏃犵┓澶氳В锛夛紝<br>';
+                    analysis += '<span class="wrong">鉂?鏉′欢涓嶈冻锛岄€夐」A閿欒銆?/span><br>';
                 }
                 if (isPerp && !nIsParallelToBetaN) {
-                    analysis += '<br><span class="correct">👉 当前γ正处于⊥β的位置！</span>';
+                    analysis += '<br><span class="correct">馃憠 褰撳墠纬姝ｅ浜庘姤尾鐨勪綅缃紒</span>';
                 }
             } else if (currentCondition === 'B') {
-                analysis += '<strong>条件B：m与α成60°</strong><br>';
-                analysis += 'm的方向部分确定（在锥面上），n⊥m<br>';
-                analysis += 'n的方向仍有自由度（在⊥m的平面内）<br>';
+                analysis += '<strong>鏉′欢B锛歮涓幬辨垚60掳</strong><br>';
+                analysis += 'm鐨勬柟鍚戦儴鍒嗙‘瀹氾紙鍦ㄩ敟闈笂锛夛紝n鈯<br>';
+                analysis += 'n鐨勬柟鍚戜粛鏈夎嚜鐢卞害锛堝湪鈯鐨勫钩闈㈠唴锛?br>';
                 if (nIsParallelToBetaN) {
-                    analysis += '⚠️ 存在φ使n//β法向量→无穷多解<br>';
-                    analysis += '<span class="wrong">❌ 不能保证唯一性。选项B错误。</span><br>';
+                    analysis += '鈿狅笍 瀛樺湪蠁浣縩//尾娉曞悜閲忊啋鏃犵┓澶氳В<br>';
+                    analysis += '<span class="wrong">鉂?涓嶈兘淇濊瘉鍞竴鎬с€傞€夐」B閿欒銆?/span><br>';
                 } else {
-                    analysis += '当前φ下过n且⊥β的平面唯一，<br>';
-                    analysis += '但n方向可变，存在n//β法向量的情况，<br>';
-                    analysis += '<span class="wrong">❌ 条件不足，选项B错误。</span><br>';
+                    analysis += '褰撳墠蠁涓嬭繃n涓斺姤尾鐨勫钩闈㈠敮涓€锛?br>';
+                    analysis += '浣唍鏂瑰悜鍙彉锛屽瓨鍦╪//尾娉曞悜閲忕殑鎯呭喌锛?br>';
+                    analysis += '<span class="wrong">鉂?鏉′欢涓嶈冻锛岄€夐」B閿欒銆?/span><br>';
                 }
                 if (isPerp) {
-                    analysis += '<br><span class="correct">👉 当前γ正处于⊥β的位置！</span>';
+                    analysis += '<br><span class="correct">馃憠 褰撳墠纬姝ｅ浜庘姤尾鐨勪綅缃紒</span>';
                 }
             }
 
             analysisText.innerHTML = analysis;
         }
 
-        // ==================== 事件监听 ====================
+        // ==================== 浜嬩欢鐩戝惉 ====================
         thetaSlider.addEventListener('input', () => {
             theta = parseFloat(thetaSlider.value);
             updateScene();
@@ -848,16 +851,15 @@
                 conditionBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 currentCondition = btn.dataset.cond;
-                // 切换条件时重置phi为0
+                // 鍒囨崲鏉′欢鏃堕噸缃畃hi涓?
                 phi = 0;
                 phiSlider.value = 0;
-                phiValEl.textContent = '0°';
+                phiValEl.textContent = '0掳';
                 updateScene();
             });
         });
 
-        // 键盘快捷键
-        window.addEventListener('keydown', (e) => {
+        // 閿洏蹇嵎閿?        window.addEventListener('keydown', (e) => {
             switch (e.key.toLowerCase()) {
                 case 'a':
                     currentCondition = 'A';
@@ -908,33 +910,32 @@
             }
         });
 
-        // 响应式处理
-        window.addEventListener('resize', () => {
+        // 鍝嶅簲寮忓鐞?        window.addEventListener('resize', () => {
             camera.aspect = canvasWrapper.clientWidth / Math.max(canvasWrapper.clientHeight, 1);
             camera.updateProjectionMatrix();
             renderer.setSize(canvasWrapper.clientWidth, canvasWrapper.clientHeight);
         });
 
-        // ==================== 渲染循环 ====================
+        // ==================== 娓叉煋寰幆 ====================
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
             renderer.render(scene, camera);
         }
 
-        // ==================== 初始设置 ====================
+        // ==================== 鍒濆璁剧疆 ====================
         updateScene();
         animate();
 
-        // ==================== 初始日志 ====================
-        console.log('📐 立体几何模拟已就绪');
-        console.log('  条件：m⊥n，α//β');
-        console.log('  当前条件：选项C（m⊥α）');
-        console.log('  拖拽鼠标旋转视角 | 滚轮缩放 | 右键平移');
-        console.log('  键盘快捷键：A/B/C切换条件，←→调整θ，↑↓调整φ');
-        console.log('  滑动θ旋转过n的平面γ，观察何时γ⊥β');
-        console.log('  滑动φ改变n的方向，观察条件A/B的不确定性');
-        console.log('  正确答案：C和D（当m⊥α时，过n可作唯一平面与β垂直，也可作唯一平面与β平行）');
+        // ==================== 鍒濆鏃ュ織 ====================
+        console.log('馃搻 绔嬩綋鍑犱綍妯℃嫙宸插氨缁?);
+        console.log('  鏉′欢锛歮鈯锛屛?/尾');
+        console.log('  褰撳墠鏉′欢锛氶€夐」C锛坢鈯ノ憋級');
+        console.log('  鎷栨嫿榧犳爣鏃嬭浆瑙嗚 | 婊氳疆缂╂斁 | 鍙抽敭骞崇Щ');
+        console.log('  閿洏蹇嵎閿細A/B/C鍒囨崲鏉′欢锛屸啇鈫掕皟鏁次革紝鈫戔啌璋冩暣蠁');
+        console.log('  婊戝姩胃鏃嬭浆杩噉鐨勫钩闈⑽筹紝瑙傚療浣曟椂纬鈯ノ?);
+        console.log('  婊戝姩蠁鏀瑰彉n鐨勬柟鍚戯紝瑙傚療鏉′欢A/B鐨勪笉纭畾鎬?);
+        console.log('  姝ｇ‘绛旀锛欳鍜孌锛堝綋m鈯ノ辨椂锛岃繃n鍙綔鍞竴骞抽潰涓幬插瀭鐩达紝涔熷彲浣滃敮涓€骞抽潰涓幬插钩琛岋級');
     </script>
 </body>
 </html>

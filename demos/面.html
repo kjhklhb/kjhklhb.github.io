@@ -9,8 +9,28 @@
             margin: 0;
             overflow: hidden;
             font-family: 'Segoe UI', 'PingFang SC', Roboto, 'Helvetica Neue', sans-serif;
-            background-color: #111;
+            background-color: #0a0a0a;
+            -webkit-font-smoothing: antialiased;
         }
+
+        /* ===== NOISE OVERLAY ===== */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            pointer-events: none;
+            opacity: 0.025;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            background-repeat: repeat;
+            background-size: 256px 256px;
+        }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 
         #canvas-container {
             position: absolute;
@@ -18,6 +38,7 @@
             left: 0;
             width: 72%;
             height: 100vh;
+            background: radial-gradient(ellipse at center, #141c2a 0%, #080b12 100%);
         }
 
         #info-panel {
@@ -26,24 +47,18 @@
             right: 0;
             width: 28%;
             height: 100vh;
-            background: rgba(22, 22, 28, 0.92);
-            backdrop-filter: blur(8px);
-            color: #e0e0e0;
-            padding: 24px 20px;
+            background: rgba(8, 10, 18, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            color: #e0e4ee;
+            padding: 28px 22px;
             box-sizing: border-box;
             overflow-y: auto;
-            border-left: 1px solid rgba(255, 255, 255, 0.08);
+            border-left: 1px solid rgba(255, 255, 255, 0.05);
             display: flex;
             flex-direction: column;
-            gap: 16px;
-        }
-
-        #info-panel::-webkit-scrollbar {
-            width: 4px;
-        }
-        #info-panel::-webkit-scrollbar-thumb {
-            background: #555;
-            border-radius: 4px;
+            gap: 14px;
+            box-shadow: -8px 0 40px rgba(0, 0, 0, 0.5);
         }
 
         .title {
@@ -52,7 +67,7 @@
             color: #fff;
             letter-spacing: 1px;
             border-bottom: 2px solid #ff7f50;
-            padding-bottom: 8px;
+            padding-bottom: 10px;
         }
 
         .subtitle {
@@ -62,11 +77,12 @@
         }
 
         .options-box {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
             padding: 14px 16px;
             margin: 4px 0;
             border-left: 4px solid #ffaa44;
+            backdrop-filter: blur(8px);
         }
 
         .options-box .label {
@@ -84,13 +100,13 @@
         }
 
         .proof-box {
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
             padding: 16px 18px;
             font-size: 14px;
             line-height: 1.7;
-            color: #ccc;
-            border: 1px solid #2a2a3a;
+            color: #c8d0e0;
+            border: 1px solid rgba(255, 255, 255, 0.06);
             margin-top: 4px;
             position: relative;
         }
@@ -124,17 +140,19 @@
         }
 
         .btn-reset {
-            background: #2a2a3a;
-            border: none;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             padding: 8px 16px;
-            border-radius: 6px;
-            color: #ddd;
+            border-radius: 8px;
+            color: #99aacb;
             cursor: pointer;
             font-size: 13px;
-            transition: background 0.2s;
+            transition: all 0.25s ease;
         }
         .btn-reset:hover {
-            background: #3a3a4a;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            transform: translateY(-1px);
         }
 
         .flex-row {
