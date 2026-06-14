@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>数学物理 3D 教学演示</title>
+    <style>
+        /* ===== 全局重置 ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0b0e17 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* ===== 头部 ===== */
+        header {
+            width: 100%;
+            max-width: 1200px;
+            padding: 60px 24px 40px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #4da6ff, #b066ff, #4cff88);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 2px;
+        }
+
+        header p {
+            margin-top: 12px;
+            font-size: 1.15rem;
+            color: #8899bb;
+            letter-spacing: 1px;
+        }
+
+        /* ===== 分隔装饰线 ===== */
+        .divider {
+            width: 80px;
+            height: 3px;
+            background: linear-gradient(90deg, #4da6ff, #b066ff);
+            border-radius: 4px;
+            margin: 8px auto 0;
+        }
+
+        /* ===== 卡片网格 ===== */
+        .gallery {
+            width: 100%;
+            max-width: 1200px;
+            padding: 0 24px 60px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 28px;
+        }
+
+        /* ===== 单张卡片 ===== */
+        .card {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 20px;
+            padding: 28px 26px 24px;
+            transition: transform 0.3s ease, box-shadow 0.4s ease, border-color 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5);
+            border-color: rgba(77, 166, 255, 0.25);
+        }
+
+        /* 卡片标题 */
+        .card h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            line-height: 1.5;
+            color: #f0f4ff;
+            margin-bottom: 10px;
+        }
+
+        /* 学科标签 */
+        .card .tags {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+
+        .card .tag {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 3px 12px;
+            border-radius: 20px;
+            background: rgba(77, 166, 255, 0.15);
+            color: #7bbaff;
+            border: 1px solid rgba(77, 166, 255, 0.2);
+        }
+
+        .tag.physics {
+            background: rgba(76, 255, 136, 0.12);
+            color: #6eeb9a;
+            border-color: rgba(76, 255, 136, 0.2);
+        }
+
+        .tag.geometry {
+            background: rgba(176, 102, 255, 0.12);
+            color: #c999ff;
+            border-color: rgba(176, 102, 255, 0.2);
+        }
+
+        /* 描述 */
+        .card .description {
+            font-size: 0.92rem;
+            line-height: 1.7;
+            color: #99aacb;
+            flex: 1;
+            margin-bottom: 20px;
+        }
+
+        /* 按钮 */
+        .card .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .card .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 22px;
+            border-radius: 30px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.25s, transform 0.15s;
+        }
+
+        .card .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4da6ff, #3a7bd5);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(77, 166, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #5cb3ff, #4a8ae0);
+            box-shadow: 0 6px 24px rgba(77, 166, 255, 0.45);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: #b0c4ee;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.14);
+        }
+
+        /* ===== 文件信息 ===== */
+        .card .file-info {
+            margin-top: 14px;
+            font-size: 0.75rem;
+            color: #556688;
+            display: flex;
+            gap: 16px;
+        }
+
+        .card .file-info span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* ===== 底部 ===== */
+        footer {
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px 24px 40px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #445566;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 600px) {
+            header h1 { font-size: 1.8rem; }
+            .gallery {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .card { padding: 22px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== 头部 ===== -->
+<header>
+    <h1>📐 数学物理 3D 教学演示</h1>
+    <p>交互式三维可视化 · 立体几何 &amp; 物理仿真</p>
+    <div class="divider"></div>
+</header>
+
+<!-- ===== 卡片网格 ===== -->
+<div class="gallery" id="gallery">
+    <!-- 卡片由 JavaScript 动态生成，方便维护 -->
+</div>
+
+<!-- ===== 底部 ===== -->
+<footer>
+    © 2025 · GitHub Pages 教学演示合集
+</footer>
+
+<script>
+    // ============================================================
+    //  演示数据 —— 在此添加 / 删除 / 修改卡片即可
+    // ============================================================
+    const demos = [
+        {
+            file: '正方体.html',
+            title: '立体几何模拟',
+            subtitle: '过直线 n 作平面与 β 垂直 / 平行',
+            tags: ['几何'],
+            description:
+                '在正方体框架中，动态演示如何过给定直线 n 构造一个平面，使其与平面 β 垂直或平行。包含完整的 Three.js 交互式 3D 场景，支持旋转 / 缩放 / 平移。',
+        },
+        {
+            file: '面.html',
+            title: '三棱锥外接球',
+            subtitle: 'A-A₁PD 外接球（调换 B↔D · B₁↔D₁）',
+            tags: ['几何'],
+            description:
+                '三棱锥 A-A₁PD 的外接球 3D 可视化。直观展示球心、半径与棱锥顶点关系，辅助空间几何解题思路。包含选项 D 的标注与交互控制。',
+        },
+        {
+            file: 'deepseek_html_20260612_cb3ae5.html',
+            title: '圆周运动 · 转台物块',
+            subtitle: '3D 动态模拟：物块在转台上的圆周运动',
+            tags: ['物理'],
+            description:
+                '物块在匀速旋转转台上做圆周运动的 3D 物理仿真。动态展示向心力、速度矢量、轨迹半径等物理量，帮助学生理解圆周运动的核心概念。',
+        },
+    ];
+
+    // ============================================================
+    //  渲染卡片
+    // ============================================================
+    const gallery = document.getElementById('gallery');
+
+    demos.forEach((demo) => {
+        // 标签 HTML
+        const tagHtml = demo.tags
+            .map((t) => {
+                const cls = t === '物理' ? 'physics' : 'geometry';
+                return `<span class="tag ${cls}">${t}</span>`;
+            })
+            .join('');
+
+        // 用文件名推测大小（仅在本地生效，线上只是展示）
+        // 实际展示时不依赖真实大小，直接写死更可靠
+        const sizeMap = {
+            '正方体.html': '940 行',
+            '面.html': '478 行',
+            'deepseek_html_20260612_cb3ae5.html': '930 行',
+        };
+        const fileSize = sizeMap[demo.file] || '—';
+
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+            <h2>${demo.title}</h2>
+            <div class="tags">${tagHtml}</div>
+            <p class="description">${demo.description}</p>
+            <div class="btn-group">
+                <a class="btn btn-primary" href="${demo.file}" target="_blank">
+                    ▶ 打开演示
+                </a>
+                <a class="btn btn-secondary" href="${demo.file}">
+                    在当前页打开
+                </a>
+            </div>
+            <div class="file-info">
+                <span>📄 ${demo.file}</span>
+                <span>📏 ${fileSize}</span>
+            </div>
+        `;
+        gallery.appendChild(card);
+    });
+</script>
+
+</body>
+</html>
