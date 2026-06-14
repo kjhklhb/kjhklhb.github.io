@@ -3,315 +3,653 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>数学物理 3D 教学演示</title>
+    <title>Portfolio</title>
     <style>
-        /* ===== 全局重置 ===== */
+        /* ============================================================
+           1.  RESET & BASE
+           ============================================================ */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
-            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', Roboto, sans-serif;
-            background: linear-gradient(135deg, #0b0e17 0%, #1a1a2e 50%, #16213e 100%);
-            color: #e0e0e0;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+            background: #0a0a0a;
+            color: #f0f0f0;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ============================================================
+           2.  NOISE OVERLAY (cinematic grain)
+           ============================================================ */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            pointer-events: none;
+            opacity: 0.035;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            background-repeat: repeat;
+            background-size: 256px 256px;
+        }
+
+        /* ============================================================
+           3.  CURSOR GLOW
+           ============================================================ */
+        #cursor-glow {
+            position: fixed;
+            width: 420px;
+            height: 420px;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, rgba(77, 166, 255, 0.06), transparent 70%);
+            pointer-events: none;
+            z-index: 1;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s;
+        }
+
+        /* ============================================================
+           4.  NAVBAR
+           ============================================================ */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            padding: 24px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.4s, padding 0.3s;
+        }
+
+        nav.scrolled {
+            background: rgba(10, 10, 10, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 16px 48px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .nav-logo {
+            font-size: 1.15rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+        }
+
+        .nav-logo span {
+            color: rgba(255, 255, 255, 0.2);
+            margin: 0 6px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 36px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: rgba(255, 255, 255, 0.45);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 400;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            transition: color 0.3s;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.5);
+            transition: width 0.35s ease;
+        }
+
+        .nav-links a:hover {
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links a.active {
+            color: rgba(255, 255, 255, 0.75);
+        }
+
+        /* ============================================================
+           5.  HERO SECTION
+           ============================================================ */
+        .hero {
+            position: relative;
+            z-index: 2;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            justify-content: center;
             align-items: center;
-        }
-
-        /* ===== 头部 ===== */
-        header {
-            width: 100%;
-            max-width: 1200px;
-            padding: 60px 24px 40px;
             text-align: center;
+            padding: 120px 32px 80px;
         }
 
-        header h1 {
-            font-size: 2.8rem;
-            font-weight: 700;
-            background: linear-gradient(90deg, #4da6ff, #b066ff, #4cff88);
+        /* 背景渐变光晕 */
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle at center, rgba(77, 166, 255, 0.08), transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-subtitle {
+            font-size: 0.8rem;
+            font-weight: 400;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.3);
+            margin-bottom: 24px;
+            animation: fadeUp 1s 0.2s both;
+        }
+
+        .hero-title {
+            font-size: clamp(3rem, 8vw, 7rem);
+            font-weight: 200;
+            line-height: 1.08;
+            letter-spacing: -1px;
+            margin-bottom: 20px;
+            animation: fadeUp 1s 0.4s both;
+        }
+
+        .hero-title .highlight {
+            font-weight: 400;
+            background: linear-gradient(135deg, #ffffff 0%, #88bbff 50%, #a07aff 100%);
             background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            letter-spacing: 2px;
         }
 
-        header p {
-            margin-top: 12px;
-            font-size: 1.15rem;
-            color: #8899bb;
-            letter-spacing: 1px;
+        .hero-desc {
+            font-size: clamp(0.95rem, 1.4vw, 1.15rem);
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.35);
+            max-width: 520px;
+            line-height: 1.8;
+            letter-spacing: 0.5px;
+            margin-bottom: 48px;
+            animation: fadeUp 1s 0.6s both;
         }
 
-        /* ===== 分隔装饰线 ===== */
-        .divider {
-            width: 80px;
-            height: 3px;
-            background: linear-gradient(90deg, #4da6ff, #b066ff);
-            border-radius: 4px;
-            margin: 8px auto 0;
-        }
-
-        /* ===== 卡片网格 ===== */
-        .gallery {
-            width: 100%;
-            max-width: 1200px;
-            padding: 0 24px 60px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-            gap: 28px;
-        }
-
-        /* ===== 单张卡片 ===== */
-        .card {
-            background: rgba(255, 255, 255, 0.04);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.07);
-            border-radius: 20px;
-            padding: 28px 26px 24px;
-            transition: transform 0.3s ease, box-shadow 0.4s ease, border-color 0.3s ease;
+        /* ===== HERO BUTTONS ===== */
+        .hero-buttons {
             display: flex;
-            flex-direction: column;
-        }
-
-        .card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5);
-            border-color: rgba(77, 166, 255, 0.25);
-        }
-
-        /* 卡片标题 */
-        .card h2 {
-            font-size: 1.3rem;
-            font-weight: 600;
-            line-height: 1.5;
-            color: #f0f4ff;
-            margin-bottom: 10px;
-        }
-
-        /* 学科标签 */
-        .card .tags {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 14px;
+            gap: 16px;
             flex-wrap: wrap;
+            justify-content: center;
+            animation: fadeUp 1s 0.8s both;
         }
 
-        .card .tag {
-            font-size: 0.75rem;
-            font-weight: 500;
-            padding: 3px 12px;
-            border-radius: 20px;
-            background: rgba(77, 166, 255, 0.15);
-            color: #7bbaff;
-            border: 1px solid rgba(77, 166, 255, 0.2);
-        }
-
-        .tag.physics {
-            background: rgba(76, 255, 136, 0.12);
-            color: #6eeb9a;
-            border-color: rgba(76, 255, 136, 0.2);
-        }
-
-        .tag.geometry {
-            background: rgba(176, 102, 255, 0.12);
-            color: #c999ff;
-            border-color: rgba(176, 102, 255, 0.2);
-        }
-
-        /* 描述 */
-        .card .description {
-            font-size: 0.92rem;
-            line-height: 1.7;
-            color: #99aacb;
-            flex: 1;
-            margin-bottom: 20px;
-        }
-
-        /* 按钮 */
-        .card .btn-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .card .btn {
+        .btn {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            gap: 6px;
-            padding: 10px 22px;
-            border-radius: 30px;
-            font-size: 0.88rem;
-            font-weight: 500;
-            border: none;
-            cursor: pointer;
+            gap: 10px;
+            padding: 14px 36px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            text-transform: uppercase;
             text-decoration: none;
-            transition: background 0.25s, transform 0.15s;
-        }
-
-        .card .btn:active {
-            transform: scale(0.96);
+            cursor: pointer;
+            transition: all 0.35s ease;
+            border: none;
+            position: relative;
+            overflow: hidden;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #4da6ff, #3a7bd5);
-            color: #fff;
-            box-shadow: 0 4px 16px rgba(77, 166, 255, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+            color: #f0f0f0;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
         }
 
         .btn-primary:hover {
-            background: linear-gradient(135deg, #5cb3ff, #4a8ae0);
-            box-shadow: 0 6px 24px rgba(77, 166, 255, 0.45);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
         }
 
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.08);
-            color: #b0c4ee;
-            border: 1px solid rgba(255, 255, 255, 0.12);
+        .btn-primary:active {
+            transform: translateY(0);
         }
 
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.14);
+        .btn-demo {
+            background: linear-gradient(135deg, rgba(77, 166, 255, 0.15), rgba(176, 102, 255, 0.15));
+            color: #c8d8ff;
+            border: 1px solid rgba(77, 166, 255, 0.2);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
         }
 
-        /* ===== 文件信息 ===== */
-        .card .file-info {
-            margin-top: 14px;
-            font-size: 0.75rem;
-            color: #556688;
+        .btn-demo:hover {
+            background: linear-gradient(135deg, rgba(77, 166, 255, 0.25), rgba(176, 102, 255, 0.25));
+            border-color: rgba(77, 166, 255, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 48px rgba(77, 166, 255, 0.15);
+        }
+
+        .btn-demo .arrow {
+            display: inline-block;
+            transition: transform 0.35s ease;
+        }
+
+        .btn-demo:hover .arrow {
+            transform: translateX(4px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-outline:hover {
+            color: rgba(255, 255, 255, 0.7);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* ===== SCROLL INDICATOR ===== */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 36px;
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
-            gap: 16px;
-        }
-
-        .card .file-info span {
-            display: inline-flex;
+            flex-direction: column;
             align-items: center;
-            gap: 4px;
+            gap: 8px;
+            opacity: 0.25;
+            animation: fadeUp 1s 1.2s both, floatDown 2.5s ease-in-out infinite 2s;
         }
 
-        /* ===== 底部 ===== */
+        .scroll-indicator .mouse {
+            width: 22px;
+            height: 36px;
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            position: relative;
+        }
+
+        .scroll-indicator .mouse::after {
+            content: '';
+            position: absolute;
+            top: 7px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 3px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            animation: scrollWheel 2s ease-in-out infinite;
+        }
+
+        .scroll-indicator span {
+            font-size: 0.6rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* ============================================================
+           6.  ABOUT SECTION (placeholder)
+           ============================================================ */
+        .about {
+            position: relative;
+            z-index: 2;
+            padding: 120px 32px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .section-label {
+            font-size: 0.7rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.15);
+            margin-bottom: 16px;
+        }
+
+        .about-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 64px;
+            align-items: start;
+        }
+
+        .about-text h2 {
+            font-size: 2rem;
+            font-weight: 300;
+            line-height: 1.4;
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .about-text p {
+            font-size: 0.95rem;
+            font-weight: 300;
+            line-height: 1.9;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .about-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+
+        .stat-item {
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .stat-number {
+            font-size: 2.2rem;
+            font-weight: 200;
+            color: rgba(255, 255, 255, 0.5);
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* ============================================================
+           7.  FOOTER
+           ============================================================ */
         footer {
-            width: 100%;
-            max-width: 1200px;
-            padding: 20px 24px 40px;
+            position: relative;
+            z-index: 2;
+            padding: 40px 32px 48px;
             text-align: center;
-            font-size: 0.85rem;
-            color: #445566;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
         }
 
-        /* ===== 响应式 ===== */
-        @media (max-width: 600px) {
-            header h1 { font-size: 1.8rem; }
-            .gallery {
-                grid-template-columns: 1fr;
+        footer p {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.12);
+            letter-spacing: 1px;
+        }
+
+        /* ============================================================
+           8.  KEYFRAMES
+           ============================================================ */
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes floatDown {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(6px); }
+        }
+
+        @keyframes scrollWheel {
+            0%, 100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            50% { opacity: 0.3; transform: translateX(-50%) translateY(8px); }
+        }
+
+        /* ============================================================
+           9.  RESPONSIVE
+           ============================================================ */
+        @media (max-width: 768px) {
+            nav {
+                padding: 20px 24px;
+            }
+
+            nav.scrolled {
+                padding: 14px 24px;
+            }
+
+            .nav-links {
                 gap: 20px;
             }
-            .card { padding: 22px 20px; }
+
+            .nav-links a {
+                font-size: 0.7rem;
+                letter-spacing: 1px;
+            }
+
+            .hero {
+                padding: 100px 24px 60px;
+                min-height: 90vh;
+            }
+
+            .hero-title {
+                font-size: clamp(2.2rem, 10vw, 3.2rem);
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 280px;
+                justify-content: center;
+            }
+
+            .about-content {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .about-stats {
+                gap: 16px;
+            }
+
+            #cursor-glow {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-links a:nth-child(3),
+            .nav-links a:nth-child(4) {
+                display: none;
+            }
+
+            .about {
+                padding: 80px 20px;
+            }
         }
     </style>
 </head>
 <body>
 
-<!-- ===== 头部 ===== -->
-<header>
-    <h1>📐 数学物理 3D 教学演示</h1>
-    <p>交互式三维可视化 · 立体几何 &amp; 物理仿真</p>
-    <div class="divider"></div>
-</header>
+    <!-- ===== CURSOR GLOW ===== -->
+    <div id="cursor-glow"></div>
 
-<!-- ===== 卡片网格 ===== -->
-<div class="gallery" id="gallery">
-    <!-- 卡片由 JavaScript 动态生成，方便维护 -->
-</div>
+    <!-- ===== NAVBAR ===== -->
+    <nav id="navbar">
+        <div class="nav-logo">Portfolio<span>·</span>2025</div>
+        <ul class="nav-links">
+            <li><a href="#about">关于</a></li>
+            <li><a href="demos.html" class="active">演示</a></li>
+            <li><a href="#">项目</a></li>
+            <li><a href="#">联系</a></li>
+        </ul>
+    </nav>
 
-<!-- ===== 底部 ===== -->
-<footer>
-    © 2025 · GitHub Pages 教学演示合集
-</footer>
+    <!-- ===== HERO ===== -->
+    <section class="hero" id="hero">
+        <p class="hero-subtitle">Interactive 3D · Geometry · Physics</p>
+        <h1 class="hero-title">
+            用 <span class="highlight">三维</span> 理解世界
+        </h1>
+        <p class="hero-desc">
+            这里是交互式教学演示的集合 — 将抽象的数学与物理概念<br />
+            转化为可视、可触的 3D 体验。
+        </p>
+        <div class="hero-buttons">
+            <a href="demos.html" class="btn btn-demo">
+                探索演示 <span class="arrow">→</span>
+            </a>
+            <a href="#about" class="btn btn-outline">了解更多</a>
+        </div>
 
-<script>
-    // ============================================================
-    //  演示数据 —— 在此添加 / 删除 / 修改卡片即可
-    // ============================================================
-    const demos = [
-        {
-            file: '正方体.html',
-            title: '立体几何模拟',
-            subtitle: '过直线 n 作平面与 β 垂直 / 平行',
-            tags: ['几何'],
-            description:
-                '在正方体框架中，动态演示如何过给定直线 n 构造一个平面，使其与平面 β 垂直或平行。包含完整的 Three.js 交互式 3D 场景，支持旋转 / 缩放 / 平移。',
-        },
-        {
-            file: '面.html',
-            title: '三棱锥外接球',
-            subtitle: 'A-A₁PD 外接球（调换 B↔D · B₁↔D₁）',
-            tags: ['几何'],
-            description:
-                '三棱锥 A-A₁PD 的外接球 3D 可视化。直观展示球心、半径与棱锥顶点关系，辅助空间几何解题思路。包含选项 D 的标注与交互控制。',
-        },
-        {
-            file: 'deepseek_html_20260612_cb3ae5.html',
-            title: '圆周运动 · 转台物块',
-            subtitle: '3D 动态模拟：物块在转台上的圆周运动',
-            tags: ['物理'],
-            description:
-                '物块在匀速旋转转台上做圆周运动的 3D 物理仿真。动态展示向心力、速度矢量、轨迹半径等物理量，帮助学生理解圆周运动的核心概念。',
-        },
-    ];
+        <div class="scroll-indicator">
+            <div class="mouse"></div>
+            <span>Scroll</span>
+        </div>
+    </section>
 
-    // ============================================================
-    //  渲染卡片
-    // ============================================================
-    const gallery = document.getElementById('gallery');
-
-    demos.forEach((demo) => {
-        // 标签 HTML
-        const tagHtml = demo.tags
-            .map((t) => {
-                const cls = t === '物理' ? 'physics' : 'geometry';
-                return `<span class="tag ${cls}">${t}</span>`;
-            })
-            .join('');
-
-        // 用文件名推测大小（仅在本地生效，线上只是展示）
-        // 实际展示时不依赖真实大小，直接写死更可靠
-        const sizeMap = {
-            '正方体.html': '940 行',
-            '面.html': '478 行',
-            'deepseek_html_20260612_cb3ae5.html': '930 行',
-        };
-        const fileSize = sizeMap[demo.file] || '—';
-
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-            <h2>${demo.title}</h2>
-            <div class="tags">${tagHtml}</div>
-            <p class="description">${demo.description}</p>
-            <div class="btn-group">
-                <a class="btn btn-primary" href="${demo.file}" target="_blank">
-                    ▶ 打开演示
-                </a>
-                <a class="btn btn-secondary" href="${demo.file}">
-                    在当前页打开
-                </a>
+    <!-- ===== ABOUT (placeholder) ===== -->
+    <section class="about" id="about">
+        <p class="section-label">About</p>
+        <div class="about-content">
+            <div class="about-text">
+                <h2>
+                    用代码构建<br />
+                    看得见的抽象
+                </h2>
+                <p>
+                    <!-- 在这里填写你的个人介绍 -->
+                    这里将会是你的个人简介。描述你的背景、研究方向或教学理念。
+                    用 Three.js 构建交互式 3D 场景，让几何与物理在浏览器中生动呈现。
+                    <br /><br />
+                    你可以在这里写下任何你想表达的内容 —— 你是谁、你做什么、
+                    或者这个站点的意义。
+                </p>
             </div>
-            <div class="file-info">
-                <span>📄 ${demo.file}</span>
-                <span>📏 ${fileSize}</span>
+            <div class="about-stats">
+                <div class="stat-item">
+                    <div class="stat-number">—</div>
+                    <div class="stat-label">项目</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">—</div>
+                    <div class="stat-label">教学演示</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">—</div>
+                    <div class="stat-label">年份</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">—</div>
+                    <div class="stat-label">领域</div>
+                </div>
             </div>
-        `;
-        gallery.appendChild(card);
-    });
-</script>
+        </div>
+    </section>
 
+    <!-- ===== FOOTER ===== -->
+    <footer>
+        <p>© 2025 · Built with Three.js</p>
+    </footer>
+
+    <script>
+        // ============================================================
+        //  1.  CURSOR GLOW
+        // ============================================================
+        const glow = document.getElementById('cursor-glow');
+        let glowX = -200, glowY = -200;
+        let targetX = -200, targetY = -200;
+
+        document.addEventListener('mousemove', (e) => {
+            targetX = e.clientX;
+            targetY = e.clientY;
+        });
+
+        function animateGlow() {
+            glowX += (targetX - glowX) * 0.06;
+            glowY += (targetY - glowY) * 0.06;
+            glow.style.left = glowX + 'px';
+            glow.style.top = glowY + 'px';
+            requestAnimationFrame(animateGlow);
+        }
+        animateGlow();
+
+        // ============================================================
+        //  2.  NAVBAR SCROLL EFFECT
+        // ============================================================
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 60) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // ============================================================
+        //  3.  INTERSECTION OBSERVER — reveal on scroll
+        // ============================================================
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            },
+            { threshold: 0.1 }
+        );
+
+        document.querySelectorAll('.about-content > *').forEach((el) => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+            observer.observe(el);
+        });
+
+        // ============================================================
+        //  4.  HERO PARALLAX (subtle)
+        // ============================================================
+        window.addEventListener('scroll', () => {
+            const scrolled = window.scrollY;
+            const hero = document.querySelector('.hero');
+            if (scrolled < window.innerHeight) {
+                hero.style.transform = `translateY(${scrolled * 0.15}px)`;
+                hero.style.opacity = 1 - scrolled / (window.innerHeight * 0.8);
+            }
+        });
+    </script>
 </body>
 </html>
