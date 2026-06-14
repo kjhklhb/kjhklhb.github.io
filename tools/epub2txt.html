@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EPUB → TXT 转换器</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --primary-light: #eef2ff;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --radius: 12px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 600px;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 32px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  /* 拖拽区 */
+  .dropzone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .dropzone:hover,
+  .dropzone.drag-over {
+    border-color: var(--primary);
+    background: var(--primary-light);
+  }
+  .dropzone.drag-over {
+    transform: scale(1.01);
+  }
+  .dropzone-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    line-height: 1;
+  }
+  .dropzone-text {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .dropzone-hint {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 6px;
+  }
+  .dropzone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .dropzone.file-selected {
+    border-color: var(--success);
+    border-style: solid;
+    background: #f0fdf4;
+  }
+
+  /* 文件信息 */
+  .file-info {
+    display: none;
+    margin-top: 20px;
+    padding: 14px 16px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .file-info.show { display: flex; align-items: center; gap: 12px; }
+  .file-info .name { flex: 1; word-break: break-all; }
+  .file-info .size { color: var(--text-secondary); white-space: nowrap; }
+  .file-info .remove-btn {
+    background: none; border: none; color: var(--text-secondary);
+    cursor: pointer; font-size: 18px; line-height: 1; padding: 2px 6px;
+    border-radius: 4px; transition: 0.15s;
+  }
+  .file-info .remove-btn:hover { background: #e2e8f0; color: var(--danger); }
+
+  /* 选项 */
+  .options {
+    display: none;
+    margin-top: 20px;
+  }
+  .options.show { display: block; }
+
+  .option-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+  .option-group label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .option-group input[type="checkbox"] {
+    width: 16px; height: 16px;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+
+  /* 按钮 */
+  .btn-group {
+    display: none;
+    margin-top: 20px;
+    gap: 10px;
+  }
+  .btn-group.show { display: flex; }
+
+  .btn {
+    flex: 1;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    background: var(--primary);
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--primary-hover);
+  }
+
+  .btn-secondary {
+    background: #e2e8f0;
+    color: var(--text);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: #cbd5e1;
+  }
+
+  /* 进度 */
+  .progress-wrap {
+    display: none;
+    margin-top: 20px;
+  }
+  .progress-wrap.show { display: block; }
+
+  .progress-status {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+  .progress-bar-bg {
+    width: 100%;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--primary), #818cf8);
+    border-radius: 4px;
+    transition: width 0.3s;
+  }
+  .progress-detail {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 6px;
+  }
+
+  /* 结果 */
+  .result {
+    display: none;
+    margin-top: 20px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .result.show { display: block; }
+  .result.success {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+  }
+  .result.error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+  }
+  .result .char-count {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 13px;
+    opacity: 0.8;
+  }
+
+  /* 预览 */
+  .preview-wrap {
+    display: none;
+    margin-top: 20px;
+  }
+  .preview-wrap.show { display: block; }
+  .preview-wrap summary {
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    padding: 6px 0;
+  }
+  .preview-box {
+    margin-top: 8px;
+    padding: 12px 14px;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    max-height: 250px;
+    overflow-y: auto;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: "Noto Sans Mono", "Cascadia Code", monospace;
+  }
+
+  /* 页脚 */
+  .footer {
+    margin-top: 24px;
+    text-align: center;
+    font-size: 12px;
+    color: #94a3b8;
+  }
+  .footer a {
+    color: var(--primary);
+    text-decoration: none;
+  }
+  .footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>📖 EPUB → TXT</h1>
+  <p class="subtitle">纯前端转换，文件不上传服务器，隐私安全</p>
+
+  <div class="card">
+    <!-- 拖拽上传 -->
+    <div class="dropzone" id="dropzone">
+      <div class="dropzone-icon">📂</div>
+      <div class="dropzone-text">拖拽 EPUB 文件到此处</div>
+      <div class="dropzone-hint">或点击选择文件 · 仅支持 .epub</div>
+      <input type="file" accept=".epub" id="fileInput" />
+    </div>
+
+    <!-- 文件信息 -->
+    <div class="file-info" id="fileInfo">
+      <span class="name" id="fileName"></span>
+      <span class="size" id="fileSize"></span>
+      <button class="remove-btn" id="removeBtn" title="移除文件">✕</button>
+    </div>
+
+    <!-- 选项 -->
+    <div class="options" id="options">
+      <div class="option-group">
+        <label>
+          <input type="checkbox" id="chkTitle" checked />
+          保留章节标题
+        </label>
+      </div>
+      <div class="option-group">
+        <label>
+          <input type="checkbox" id="chkTrim" checked />
+          清理多余空白行
+        </label>
+      </div>
+      <div class="option-group">
+        <label>
+          <input type="checkbox" id="chkTOC" />
+          生成目录索引
+        </label>
+      </div>
+    </div>
+
+    <!-- 按钮 -->
+    <div class="btn-group" id="btnGroup">
+      <button class="btn btn-primary" id="convertBtn">🔄 开始转换</button>
+    </div>
+
+    <!-- 进度 -->
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-status" id="progressStatus">正在解析...</div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-detail" id="progressDetail"></div>
+    </div>
+
+    <!-- 结果 -->
+    <div class="result" id="result"></div>
+
+    <!-- 预览 -->
+    <div class="preview-wrap" id="previewWrap">
+      <details>
+        <summary>📄 预览转换结果（前 1000 字）</summary>
+        <div class="preview-box" id="previewBox"></div>
+      </details>
+    </div>
+  </div>
+
+  <div class="footer">
+    由 <a href="#" onclick="return false;">JSZip</a> + 浏览器原生 API 驱动 ·
+    所有操作在本地完成
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js">
+</script>
+<script>
+(function () {
+  'use strict';
+
+  // ---- DOM refs ----
+  const dropzone     = document.getElementById('dropzone');
+  const fileInput    = document.getElementById('fileInput');
+  const fileInfo     = document.getElementById('fileInfo');
+  const fileName     = document.getElementById('fileName');
+  const fileSize     = document.getElementById('fileSize');
+  const removeBtn    = document.getElementById('removeBtn');
+  const options      = document.getElementById('options');
+  const btnGroup     = document.getElementById('btnGroup');
+  const convertBtn   = document.getElementById('convertBtn');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressSt   = document.getElementById('progressStatus');
+  const progressFill = document.getElementById('progressFill');
+  const progressDet  = document.getElementById('progressDetail');
+  const result       = document.getElementById('result');
+  const previewWrap  = document.getElementById('previewWrap');
+  const previewBox   = document.getElementById('previewBox');
+
+  const chkTitle  = document.getElementById('chkTitle');
+  const chkTrim   = document.getElementById('chkTrim');
+  const chkTOC    = document.getElementById('chkTOC');
+
+  let selectedFile = null;
+
+  // ---- helpers ----
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  function showResult(msg, type) {
+    result.className = 'result show ' + type;
+    result.textContent = msg;
+  }
+  function hideResult() {
+    result.className = 'result';
+    result.textContent = '';
+  }
+
+  function showProgress(status, pct, detail) {
+    progressWrap.className = 'progress-wrap show';
+    progressSt.textContent = status;
+    progressFill.style.width = Math.round(pct) + '%';
+    progressDet.textContent = detail || '';
+  }
+  function hideProgress() {
+    progressWrap.className = 'progress-wrap';
+    progressSt.textContent = '';
+    progressFill.style.width = '0%';
+    progressDet.textContent = '';
+  }
+
+  function updateUIForFile(file) {
+    if (file) {
+      selectedFile = file;
+      dropzone.classList.add('file-selected');
+      fileInfo.classList.add('show');
+      fileName.textContent = file.name;
+      fileSize.textContent = formatSize(file.size);
+      options.classList.add('show');
+      btnGroup.classList.add('show');
+      convertBtn.disabled = false;
+      hideResult();
+      hideProgress();
+      previewWrap.classList.remove('show');
+    } else {
+      selectedFile = null;
+      dropzone.classList.remove('file-selected');
+      fileInfo.classList.remove('show');
+      options.classList.remove('show');
+      btnGroup.classList.remove('show');
+      convertBtn.disabled = true;
+      hideResult();
+      hideProgress();
+      previewWrap.classList.remove('show');
+      fileInput.value = '';
+    }
+  }
+
+  // ---- 事件绑定 ----
+
+  // 选择文件
+  fileInput.addEventListener('change', function () {
+    if (this.files && this.files.length > 0) {
+      const f = this.files[0];
+      if (!f.name.toLowerCase().endsWith('.epub')) {
+        showResult('请选择 .epub 格式的文件', 'error');
+        return;
+      }
+      updateUIForFile(f);
+    }
+  });
+
+  // 拖拽
+  dropzone.addEventListener('dragenter', function (e) {
+    e.preventDefault();
+    this.classList.add('drag-over');
+  });
+  dropzone.addEventListener('dragover', function (e) {
+    e.preventDefault();
+    this.classList.add('drag-over');
+  });
+  dropzone.addEventListener('dragleave', function (e) {
+    e.preventDefault();
+    this.classList.remove('drag-over');
+  });
+  dropzone.addEventListener('drop', function (e) {
+    e.preventDefault();
+    this.classList.remove('drag-over');
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const f = files[0];
+      if (!f.name.toLowerCase().endsWith('.epub')) {
+        showResult('请拖入 .epub 格式的文件', 'error');
+        return;
+      }
+      updateUIForFile(f);
+    }
+  });
+
+  // 移除
+  removeBtn.addEventListener('click', function () {
+    updateUIForFile(null);
+  });
+
+  // ============ 核心转换 ============
+  convertBtn.addEventListener('click', async function () {
+    if (!selectedFile) return;
+
+    const optTitle = chkTitle.checked;
+    const optTrim  = chkTrim.checked;
+    const optTOC   = chkTOC.checked;
+
+    hideResult();
+    convertBtn.disabled = true;
+    showProgress('正在读取 EPUB 文件...', 5, '');
+
+    try {
+      // 1. 加载 ZIP
+      const arrayBuf = await selectedFile.arrayBuffer();
+      const zip = await JSZip.loadAsync(arrayBuf);
+
+      // 2. 读取 container.xml
+      const containerEntry = zip.file('META-INF/container.xml');
+      if (!containerEntry) throw new Error('无法找到 META-INF/container.xml，文件可能不是有效的 EPUB');
+      const containerXml = await containerEntry.async('text');
+      const opfMatch = containerXml.match(/full-path\s*=\s*"([^"]+)"/i);
+      if (!opfMatch) throw new Error('container.xml 中未找到 OPF 路径');
+      let opfPath = opfMatch[1].replace(/\\/g, '/');
+
+      showProgress('解析清单文件...', 15, opfPath);
+
+      // 3. 解析 OPF
+      const opfEntry = zip.file(opfPath);
+      if (!opfEntry) throw new Error('OPF 文件不存在: ' + opfPath);
+      const opfText = await opfEntry.async('text');
+      const baseDir = opfPath.includes('/') ? opfPath.substring(0, opfPath.lastIndexOf('/') + 1) : '';
+
+      const parser = new DOMParser();
+      const opfDoc = parser.parseFromString(opfText, 'text/xml');
+
+      // 收集 manifest
+      const manifestMap = {};
+      const manifestItems = opfDoc.querySelectorAll('manifest > item');
+      manifestItems.forEach(function (item) {
+        const id   = item.getAttribute('id');
+        const href = item.getAttribute('href');
+        const media = item.getAttribute('media-type') || '';
+        if (id && href) manifestMap[id] = { href: decodeURIComponent(href), media };
+      });
+
+      // spine 顺序
+      const spineItems = opfDoc.querySelectorAll('spine > itemref');
+      let spineIds = [];
+      spineItems.forEach(function (ref) {
+        const idref = ref.getAttribute('idref');
+        if (idref) spineIds.push(idref);
+      });
+
+      if (spineIds.length === 0) {
+        // 容错：有些 EPUB 用 linear 属性
+        throw new Error('spine 中未找到任何 itemref，无法确定阅读顺序');
+      }
+
+      showProgress('解析 OPF 完成，共 ' + spineIds.length + ' 个文档', 25, '');
+
+      // 4. 尝试读取 NCX（目录）
+      let ncxChapters = [];
+      try {
+        const ncxRef = opfDoc.querySelector('spine > itemref[linear="no"]');
+        // 更可靠：从 manifest 找 media-type="application/x-dtbncx+xml"
+        const ncxItem = opfDoc.querySelector('manifest > item[media-type="application/x-dtbncx+xml"]');
+        if (ncxItem) {
+          const ncxHref = decodeURIComponent(ncxItem.getAttribute('href'));
+          const ncxPath = baseDir + ncxHref;
+          const ncxEntry = zip.file(ncxPath);
+          if (ncxEntry) {
+            const ncxText = await ncxEntry.async('text');
+            const ncxDoc = parser.parseFromString(ncxText, 'text/xml');
+            const navPoints = ncxDoc.querySelectorAll('navPoint');
+            navPoints.forEach(function (np) {
+              const label = np.querySelector('navLabel > text');
+              const content = np.querySelector('content');
+              if (label && content) {
+                ncxChapters.push({
+                  label: label.textContent.trim(),
+                  src: content.getAttribute('src')
+                });
+              }
+            });
+          }
+        }
+      } catch (_) { /* NCX 可选，忽略错误 */ }
+
+      // 5. 逐文档提取文本
+      let parts = [];
+      let totalFiles = spineIds.length;
+
+      for (let i = 0; i < spineIds.length; i++) {
+        const idref = spineIds[i];
+        const meta = manifestMap[idref];
+        if (!meta) continue;
+
+        const href = meta.href;
+        const filePath = baseDir + href;
+        const entry = zip.file(filePath);
+
+        if (!entry) {
+          // 尝试 URL 解码后的路径
+          const decodedFilePath = decodeURIComponent(filePath);
+          const entry2 = zip.file(decodedFilePath);
+          if (!entry2) continue;
+        }
+
+        const html = await entry.async('text');
+        const doc = parser.parseFromString(html, 'text/html');
+
+        // 提取标题
+        let chapterTitle = '';
+        if (optTitle) {
+          const hTags = doc.querySelectorAll('h1, h2, h3');
+          for (let h of hTags) {
+            const t = h.textContent.trim();
+            if (t) { chapterTitle = t; break; }
+          }
+          if (!chapterTitle) {
+            const titleTag = doc.querySelector('title');
+            if (titleTag) chapterTitle = titleTag.textContent.trim();
+          }
+        }
+
+        // 提取正文
+        let bodyText = doc.body ? doc.body.textContent || '' : '';
+
+        // 简单清理
+        bodyText = bodyText
+          .replace(/\r\n/g, '\n')
+          .replace(/\u00A0/g, ' ')          // non-breaking space
+          .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ''); // 控制字符
+
+        if (optTitle && chapterTitle) {
+          parts.push({ type: 'chapter', title: chapterTitle, text: bodyText });
+        } else {
+          parts.push({ type: 'chapter', title: '', text: bodyText });
+        }
+
+        const pct = 25 + ((i + 1) / totalFiles) * 60;
+        showProgress(
+          '正在提取... ' + (i + 1) + '/' + totalFiles,
+          pct,
+          href.substring(href.lastIndexOf('/') + 1)
+        );
+      }
+
+      // 6. 拼接最终文本
+      showProgress('正在合并结果...', 90, '');
+
+      let output = '';
+
+      // TOC 索引
+      if (optTOC && optTitle) {
+        output += '=== 目录 ===\n\n';
+        parts.forEach(function (p, idx) {
+          const label = p.title || '第 ' + (idx + 1) + ' 章';
+          output += (idx + 1) + '. ' + label + '\n';
+        });
+        output += '\n' + '='.repeat(40) + '\n\n';
+      }
+
+      // 正文
+      parts.forEach(function (p) {
+        if (optTitle && p.title) {
+          output += '# ' + p.title + '\n\n';
+        }
+        output += p.text.trim() + '\n\n';
+      });
+
+      // 清理多余空白行
+      if (optTrim) {
+        output = output
+          .replace(/\n{4,}/g, '\n\n\n')    // 最多保留两个空行
+          .replace(/^\n+/, '')              // 开头不留空行
+          .replace(/\n+$/, '\n');           // 末尾留一个
+      }
+
+      const charCount = output.length;
+
+      showProgress('完成！', 100, '总计 ' + charCount.toLocaleString() + ' 字');
+
+      // 7. 下载
+      const blob = new Blob([output], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = selectedFile.name.replace(/\.epub$/i, '.txt');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+
+      showResult(
+        '✅ 转换成功！已下载 ' + a.download + '（共 ' + charCount.toLocaleString() + ' 字）',
+        'success'
+      );
+
+      // 预览
+      previewBox.textContent = output.substring(0, 1000);
+      previewWrap.classList.add('show');
+
+    } catch (err) {
+      console.error(err);
+      showResult('❌ 转换失败：' + err.message, 'error');
+    } finally {
+      convertBtn.disabled = false;
+    }
+  });
+
+})();
+</script>
+</body>
+</html>
