@@ -3,332 +3,625 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>教学演示 · 数学物理 3D 可视化</title>
+    <title>教学演示 · 3D 可视化</title>
     <style>
-        /* ===== 全局重置 ===== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        /* ============================================================
+           1.  RESET & BASE
+           ============================================================ */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
         body {
-            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', Roboto, sans-serif;
-            background: linear-gradient(135deg, #0b0e17 0%, #1a1a2e 50%, #16213e 100%);
-            color: #e0e0e0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+            background: #0a0a0a;
+            color: #f0f0f0;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* ===== 返回按钮 ===== */
-        .back-bar {
+        /* ============================================================
+           2.  NOISE OVERLAY (cinematic grain)
+           ============================================================ */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            pointer-events: none;
+            opacity: 0.035;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractal' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            background-repeat: repeat;
+            background-size: 256px 256px;
+        }
+
+        /* ============================================================
+           3.  CURSOR GLOW
+           ============================================================ */
+        #cursor-glow {
+            position: fixed;
+            width: 420px;
+            height: 420px;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, rgba(77, 166, 255, 0.06), transparent 70%);
+            pointer-events: none;
+            z-index: 1;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s;
+        }
+
+        /* ============================================================
+           4.  NAVBAR
+           ============================================================ */
+        nav {
+            position: fixed;
+            top: 0; left: 0;
             width: 100%;
-            max-width: 1200px;
-            padding: 24px 24px 0;
+            z-index: 1000;
+            padding: 24px 48px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: background 0.4s, padding 0.3s;
         }
-
-        .back-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: #8899bb;
+        nav.scrolled {
+            background: rgba(10,10,10,0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 16px 48px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .nav-logo {
+            font-size: 1.05rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            color: rgba(255,255,255,0.7);
             text-decoration: none;
-            font-size: 0.95rem;
-            transition: color 0.25s;
-            padding: 8px 16px;
-            border-radius: 30px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.06);
         }
-
-        .back-btn:hover {
-            color: #4da6ff;
-            background: rgba(77,166,255,0.08);
-            border-color: rgba(77,166,255,0.15);
+        .nav-logo span { color: rgba(77,166,255,0.6); }
+        .nav-links {
+            list-style: none;
+            display: flex;
+            gap: 36px;
         }
-
-        .back-btn svg {
-            width: 18px;
-            height: 18px;
-            fill: none;
-            stroke: currentColor;
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
+        .nav-links a {
+            text-decoration: none;
+            color: rgba(255,255,255,0.35);
+            font-size: 0.8rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: color 0.3s;
+            position: relative;
         }
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: rgba(255,255,255,0.5);
+            transition: width 0.3s;
+        }
+        .nav-links a:hover { color: rgba(255,255,255,0.7); }
+        .nav-links a:hover::after { width: 100%; }
+        .nav-links a.active { color: rgba(255,255,255,0.8); }
+        .nav-links a.active::after { width: 100%; }
 
-        /* ===== 头部 ===== */
-        header {
-            width: 100%;
-            max-width: 1200px;
-            padding: 40px 24px 40px;
+        /* ============================================================
+           5.  HERO SECTION
+           ============================================================ */
+        .hero {
+            min-height: 70vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             text-align: center;
+            padding: 120px 24px 80px;
+            position: relative;
+            z-index: 2;
+            width: 100%;
         }
-
-        header h1 {
-            font-size: 2.6rem;
-            font-weight: 700;
-            background: linear-gradient(90deg, #4da6ff, #b066ff, #4cff88);
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 40%, rgba(77,166,255,0.06), transparent 70%);
+            pointer-events: none;
+        }
+        .hero-subtitle {
+            font-size: 0.75rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.25);
+            margin-bottom: 20px;
+            animation: fadeUp 1s 0.2s both;
+        }
+        .hero-title {
+            font-size: 3.2rem;
+            font-weight: 200;
+            letter-spacing: 6px;
+            line-height: 1.2;
+            margin-bottom: 16px;
+            animation: fadeUp 1s 0.4s both;
+        }
+        .hero-title .highlight {
+            background: linear-gradient(90deg, #4da6ff, #b066ff);
             background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            font-weight: 400;
+        }
+        .hero-desc {
+            font-size: 1rem;
+            font-weight: 300;
+            color: rgba(255,255,255,0.4);
+            max-width: 600px;
+            line-height: 1.8;
+            margin-bottom: 32px;
+            animation: fadeUp 1s 0.6s both;
+        }
+        .hero-desc span { color: rgba(255,255,255,0.6); }
+
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+            animation: fadeUp 1s 0.8s both;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 36px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 400;
             letter-spacing: 2px;
+            text-transform: uppercase;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.35s ease;
+            border: none;
+            position: relative;
+            overflow: hidden;
         }
-
-        header p {
-            margin-top: 12px;
-            font-size: 1.1rem;
-            color: #8899bb;
-            letter-spacing: 1px;
+        .btn-demo {
+            background: linear-gradient(135deg, rgba(77,166,255,0.15), rgba(176,102,255,0.15));
+            color: #c8d8ff;
+            border: 1px solid rgba(77,166,255,0.2);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
         }
-
-        .divider {
-            width: 80px;
-            height: 3px;
-            background: linear-gradient(90deg, #4da6ff, #b066ff);
-            border-radius: 4px;
-            margin: 8px auto 0;
+        .btn-demo:hover {
+            background: linear-gradient(135deg, rgba(77,166,255,0.25), rgba(176,102,255,0.25));
+            border-color: rgba(77,166,255,0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 48px rgba(77,166,255,0.15);
         }
-
-        /* ===== 卡片网格 ===== */
-        .gallery {
-            width: 100%;
-            max-width: 1200px;
-            padding: 0 24px 60px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-            gap: 28px;
+        .btn-back {
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.45);
+            border: 1px solid rgba(255,255,255,0.08);
         }
+        .btn-back:hover {
+            color: rgba(255,255,255,0.7);
+            background: rgba(255,255,255,0.08);
+            transform: translateY(-2px);
+        }
+        .btn .arrow {
+            display: inline-block;
+            transition: transform 0.35s ease;
+        }
+        .btn:hover .arrow { transform: translateX(4px); }
 
-        /* ===== 单张卡片 ===== */
-        .card {
-            background: rgba(255, 255, 255, 0.04);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.07);
-            border-radius: 20px;
-            padding: 28px 26px 24px;
-            transition: transform 0.3s ease, box-shadow 0.4s ease, border-color 0.3s ease;
+        /* ===== Scroll Indicator ===== */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 32px;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            animation: fadeUp 1s 1.2s both;
+        }
+        .scroll-indicator .mouse {
+            width: 22px;
+            height: 34px;
+            border: 1.5px solid rgba(255,255,255,0.15);
+            border-radius: 12px;
+            position: relative;
+        }
+        .scroll-indicator .mouse::after {
+            content: '';
+            position: absolute;
+            top: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 8px;
+            background: rgba(255,255,255,0.25);
+            border-radius: 2px;
+            animation: scrollWheel 2s ease-in-out infinite;
+        }
+        .scroll-indicator span {
+            font-size: 0.55rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.12);
         }
 
+        /* ============================================================
+           6.  GALLERY
+           ============================================================ */
+        .gallery-section {
+            width: 100%;
+            max-width: 1200px;
+            padding: 0 24px 80px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+        .section-label {
+            font-size: 0.65rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.12);
+            margin-bottom: 32px;
+            text-align: center;
+        }
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 24px;
+        }
+
+        /* ============================================================
+           7.  CARD
+           ============================================================ */
+        .card {
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 20px;
+            padding: 28px 28px 24px;
+            transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1),
+                        box-shadow 0.5s ease,
+                        border-color 0.4s ease,
+                        background 0.4s ease;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transform: translateY(30px);
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: radial-gradient(ellipse at 0% 100%, rgba(77,166,255,0.04), transparent 60%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+        .card:hover::before { opacity: 1; }
+        .card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
         .card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5);
-            border-color: rgba(77, 166, 255, 0.25);
+            transform: translateY(-8px);
+            box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+            border-color: rgba(77,166,255,0.2);
+            background: rgba(255,255,255,0.05);
         }
 
         .card h2 {
-            font-size: 1.3rem;
-            font-weight: 600;
+            font-size: 1.25rem;
+            font-weight: 500;
             line-height: 1.5;
             color: #f0f4ff;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
         }
-
         .card .tags {
             display: flex;
             gap: 8px;
             margin-bottom: 14px;
             flex-wrap: wrap;
         }
-
         .card .tag {
-            font-size: 0.75rem;
+            font-size: 0.65rem;
             font-weight: 500;
-            padding: 3px 12px;
+            padding: 4px 14px;
             border-radius: 20px;
-            background: rgba(77, 166, 255, 0.15);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: rgba(77,166,255,0.1);
             color: #7bbaff;
-            border: 1px solid rgba(77, 166, 255, 0.2);
+            border: 1px solid rgba(77,166,255,0.15);
         }
-
         .tag.physics {
-            background: rgba(76, 255, 136, 0.12);
+            background: rgba(76,255,136,0.1);
             color: #6eeb9a;
-            border-color: rgba(76, 255, 136, 0.2);
+            border-color: rgba(76,255,136,0.15);
         }
-
         .tag.geometry {
-            background: rgba(176, 102, 255, 0.12);
+            background: rgba(176,102,255,0.1);
             color: #c999ff;
-            border-color: rgba(176, 102, 255, 0.2);
+            border-color: rgba(176,102,255,0.15);
         }
-
         .card .description {
-            font-size: 0.92rem;
-            line-height: 1.7;
-            color: #99aacb;
+            font-size: 0.88rem;
+            line-height: 1.8;
+            color: rgba(255,255,255,0.4);
             flex: 1;
             margin-bottom: 20px;
+            font-weight: 300;
         }
-
         .card .btn-group {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
         }
-
-        .card .btn {
+        .card .btn-card {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
-            padding: 10px 22px;
+            padding: 10px 24px;
             border-radius: 30px;
-            font-size: 0.88rem;
-            font-weight: 500;
+            font-size: 0.78rem;
+            font-weight: 400;
             border: none;
             cursor: pointer;
             text-decoration: none;
-            transition: background 0.25s, transform 0.15s;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
         }
-
-        .card .btn:active {
-            transform: scale(0.96);
-        }
-
-        .btn-primary {
+        .card .btn-card:active { transform: scale(0.97); }
+        .btn-card-primary {
             background: linear-gradient(135deg, #4da6ff, #3a7bd5);
             color: #fff;
-            box-shadow: 0 4px 16px rgba(77, 166, 255, 0.3);
+            box-shadow: 0 4px 16px rgba(77,166,255,0.2);
         }
-
-        .btn-primary:hover {
+        .btn-card-primary:hover {
             background: linear-gradient(135deg, #5cb3ff, #4a8ae0);
-            box-shadow: 0 6px 24px rgba(77, 166, 255, 0.45);
+            box-shadow: 0 6px 24px rgba(77,166,255,0.35);
+            transform: translateY(-1px);
         }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.08);
-            color: #b0c4ee;
-            border: 1px solid rgba(255, 255, 255, 0.12);
+        .btn-card-secondary {
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.5);
+            border: 1px solid rgba(255,255,255,0.08);
         }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.14);
+        .btn-card-secondary:hover {
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.7);
+            transform: translateY(-1px);
         }
-
         .card .file-info {
             margin-top: 14px;
-            font-size: 0.75rem;
-            color: #556688;
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.15);
             display: flex;
             gap: 16px;
         }
-
         .card .file-info span {
             display: inline-flex;
             align-items: center;
             gap: 4px;
         }
 
-        /* ===== 底部 ===== */
+        /* ============================================================
+           8.  FOOTER
+           ============================================================ */
         footer {
             width: 100%;
-            max-width: 1200px;
-            padding: 20px 24px 40px;
+            padding: 24px 24px 40px;
             text-align: center;
-            font-size: 0.85rem;
-            color: #445566;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.1);
+            border-top: 1px solid rgba(255,255,255,0.03);
+            position: relative;
+            z-index: 2;
+            letter-spacing: 1px;
         }
 
-        @media (max-width: 600px) {
-            header h1 { font-size: 1.8rem; }
-            .gallery { grid-template-columns: 1fr; gap: 20px; }
+        /* ============================================================
+           9.  ANIMATIONS
+           ============================================================ */
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes scrollWheel {
+            0%, 100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            50% { opacity: 0.3; transform: translateX(-50%) translateY(8px); }
+        }
+
+        /* ============================================================
+           10. RESPONSIVE
+           ============================================================ */
+        @media (max-width: 768px) {
+            nav { padding: 20px 24px; }
+            nav.scrolled { padding: 14px 24px; }
+            .nav-links { gap: 24px; }
+            .nav-links a { font-size: 0.7rem; letter-spacing: 1px; }
+            .hero-title { font-size: 2rem; letter-spacing: 4px; }
+            .hero { min-height: 60vh; padding: 100px 20px 60px; }
+            .gallery { grid-template-columns: 1fr; gap: 18px; }
             .card { padding: 22px 20px; }
+        }
+        @media (max-width: 400px) {
+            nav { flex-direction: column; gap: 12px; }
+            .hero-title { font-size: 1.6rem; }
         }
     </style>
 </head>
 <body>
 
-<!-- ===== 返回导航 ===== -->
-<div class="back-bar">
-    <a class="back-btn" href="index.html">
-        <svg viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-        返回主页
-    </a>
-</div>
+    <!-- ===== CURSOR GLOW ===== -->
+    <div id="cursor-glow"></div>
 
-<!-- ===== 头部 ===== -->
-<header>
-    <h1>📐 数学物理 3D 教学演示</h1>
-    <p>交互式三维可视化 · 立体几何 &amp; 物理仿真</p>
-    <div class="divider"></div>
-</header>
+    <!-- ===== NAVBAR ===== -->
+    <nav id="navbar">
+        <a href="index.html" class="nav-logo">Portfolio<span>·</span>2025</a>
+        <ul class="nav-links">
+            <li><a href="index.html">主页</a></li>
+            <li><a href="demos.html" class="active">演示</a></li>
+            <li><a href="learn.html">学习</a></li>
+        </ul>
+    </nav>
 
-<!-- ===== 卡片网格 ===== -->
-<div class="gallery" id="gallery"></div>
+    <!-- ===== HERO ===== -->
+    <section class="hero">
+        <p class="hero-subtitle">Interactive 3D · Geometry · Physics</p>
+        <h1 class="hero-title">
+            用 <span class="highlight">三维</span> 理解世界
+        </h1>
+        <p class="hero-desc">
+            <span>交互式教学演示</span> — 将抽象的数学与物理概念<br />
+            转化为可视、可触的 3D 体验
+        </p>
+        <div class="hero-buttons">
+            <a href="#gallery" class="btn btn-demo">
+                浏览演示 <span class="arrow">↓</span>
+            </a>
+            <a href="index.html" class="btn btn-back">
+                ← 返回主页
+            </a>
+        </div>
+        <div class="scroll-indicator">
+            <div class="mouse"></div>
+            <span>Scroll</span>
+        </div>
+    </section>
 
-<!-- ===== 底部 ===== -->
-<footer>© 2025 · GitHub Pages 教学演示合集</footer>
+    <!-- ===== GALLERY ===== -->
+    <section class="gallery-section" id="gallery">
+        <p class="section-label">· 演示合集 ·</p>
+        <div class="gallery" id="gallery-grid"></div>
+    </section>
 
-<script>
-    const demos = [
-        {
-            file: '正方体.html',
-            title: '立体几何模拟',
-            subtitle: '过直线 n 作平面与 β 垂直 / 平行',
-            tags: ['几何'],
-            description:
-                '在正方体框架中，动态演示如何过给定直线 n 构造一个平面，使其与平面 β 垂直或平行。包含完整的 Three.js 交互式 3D 场景，支持旋转 / 缩放 / 平移。',
-        },
-        {
-            file: '面.html',
-            title: '三棱锥外接球',
-            subtitle: 'A-A₁PD 外接球（调换 B↔D · B₁↔D₁）',
-            tags: ['几何'],
-            description:
-                '三棱锥 A-A₁PD 的外接球 3D 可视化。直观展示球心、半径与棱锥顶点关系，辅助空间几何解题思路。包含选项 D 的标注与交互控制。',
-        },
-        {
-            file: 'deepseek_html_20260612_cb3ae5.html',
-            title: '圆周运动 · 转台物块',
-            subtitle: '3D 动态模拟：物块在转台上的圆周运动',
-            tags: ['物理'],
-            description:
-                '物块在匀速旋转转台上做圆周运动的 3D 物理仿真。动态展示向心力、速度矢量、轨迹半径等物理量，帮助学生理解圆周运动的核心概念。',
-        },
-    ];
+    <!-- ===== FOOTER ===== -->
+    <footer>
+        <p>© 2025 · Interactive 3D Demonstrations</p>
+    </footer>
 
-    const gallery = document.getElementById('gallery');
-    const sizeMap = {
-        '正方体.html': '940 行',
-        '面.html': '478 行',
-        'deepseek_html_20260612_cb3ae5.html': '930 行',
-    };
+    <script>
+        // ============================================================
+        //  1.  CURSOR GLOW
+        // ============================================================
+        const glow = document.getElementById('cursor-glow');
+        let glowX = -200, glowY = -200;
+        let targetX = -200, targetY = -200;
+        document.addEventListener('mousemove', (e) => {
+            targetX = e.clientX;
+            targetY = e.clientY;
+        });
+        function animateGlow() {
+            glowX += (targetX - glowX) * 0.06;
+            glowY += (targetY - glowY) * 0.06;
+            glow.style.left = glowX + 'px';
+            glow.style.top = glowY + 'px';
+            requestAnimationFrame(animateGlow);
+        }
+        animateGlow();
 
-    demos.forEach((demo) => {
-        const tagHtml = demo.tags
-            .map((t) => `<span class="tag ${t === '物理' ? 'physics' : 'geometry'}">${t}</span>`)
-            .join('');
-        const fileSize = sizeMap[demo.file] || '—';
+        // ============================================================
+        //  2.  NAVBAR SCROLL
+        // ============================================================
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            navbar.classList.toggle('scrolled', window.scrollY > 60);
+        });
 
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-            <h2>${demo.title}</h2>
-            <div class="tags">${tagHtml}</div>
-            <p class="description">${demo.description}</p>
-            <div class="btn-group">
-                <a class="btn btn-primary" href="${demo.file}" target="_blank">▶ 打开演示</a>
-                <a class="btn btn-secondary" href="${demo.file}">在当前页打开</a>
-            </div>
-            <div class="file-info">
-                <span>📄 ${demo.file}</span>
-                <span>📏 ${fileSize}</span>
-            </div>
-        `;
-        gallery.appendChild(card);
-    });
-</script>
+        // ============================================================
+        //  3.  GENERATE CARDS
+        // ============================================================
+        const demos = [
+            {
+                file: '正方体.html',
+                title: '立体几何模拟',
+                subtitle: '过直线 n 作平面与 β 垂直 / 平行',
+                tags: ['几何'],
+                description:
+                    '在正方体框架中，动态演示如何过给定直线 n 构造一个平面，使其与平面 β 垂直或平行。包含完整的 Three.js 交互式 3D 场景，支持旋转 / 缩放 / 平移。',
+            },
+            {
+                file: '面.html',
+                title: '三棱锥外接球',
+                subtitle: 'A-A₁PD 外接球（调换 B↔D · B₁↔D₁）',
+                tags: ['几何'],
+                description:
+                    '三棱锥 A-A₁PD 的外接球 3D 可视化。直观展示球心、半径与棱锥顶点关系，辅助空间几何解题思路。包含选项 D 的标注与交互控制。',
+            },
+            {
+                file: 'deepseek_html_20260612_cb3ae5.html',
+                title: '圆周运动 · 转台物块',
+                subtitle: '3D 动态模拟：物块在转台上的圆周运动',
+                tags: ['物理'],
+                description:
+                    '物块在匀速旋转转台上做圆周运动的 3D 物理仿真。动态展示向心力、速度矢量、轨迹半径等物理量，帮助学生理解圆周运动的核心概念。',
+            },
+        ];
+        const sizeMap = {
+            '正方体.html': '940 行',
+            '面.html': '478 行',
+            'deepseek_html_20260612_cb3ae5.html': '930 行',
+        };
+        const gallery = document.getElementById('gallery-grid');
 
+        demos.forEach((demo, idx) => {
+            const tagHtml = demo.tags
+                .map(t => `<span class="tag ${t === '物理' ? 'physics' : 'geometry'}">${t}</span>`)
+                .join('');
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.style.transitionDelay = `${idx * 0.12}s`;
+            card.innerHTML = `
+                <h2>${demo.title}</h2>
+                <div class="tags">${tagHtml}</div>
+                <p class="description">${demo.description}</p>
+                <div class="btn-group">
+                    <a class="btn-card btn-card-primary" href="${demo.file}" target="_blank">▶ 打开演示</a>
+                    <a class="btn-card btn-card-secondary" href="${demo.file}">在当前页打开</a>
+                </div>
+                <div class="file-info">
+                    <span>📄 ${demo.file}</span>
+                    <span>📏 ${sizeMap[demo.file] || '—'}</span>
+                </div>
+            `;
+            gallery.appendChild(card);
+        });
+
+        // ============================================================
+        //  4.  INTERSECTION OBSERVER — reveal cards on scroll
+        // ============================================================
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        setTimeout(() => {
+                            entry.target.classList.add('visible');
+                        }, parseFloat(entry.target.style.transitionDelay || '0') * 1000);
+                    }
+                });
+            },
+            { threshold: 0.08 }
+        );
+        document.querySelectorAll('.card').forEach((el) => observer.observe(el));
+    </script>
 </body>
 </html>
