@@ -1,0 +1,6 @@
+# Reasonix agent workspace config
+.reasonix/
+
+# OS files
+.DS_Store
+Thumbs.db
