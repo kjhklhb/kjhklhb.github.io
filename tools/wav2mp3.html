@@ -196,7 +196,7 @@
     </div>
   </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.all.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script>
 (function(){
@@ -310,17 +310,19 @@
   function getAudioCtx(){if(!audioCtx)audioCtx=new AudioContext();return audioCtx;}
   async function decodeM4a(buffer){
     const ctx=getAudioCtx();
-    const audioBuf=await ctx.decodeAudioData(buffer.slice(0));
+    const audioBuf=await ctx.decodeAudioData(buffer);
     const numChannels=audioBuf.numberOfChannels;
     const sampleRate=audioBuf.sampleRate;
     const len=audioBuf.length;
-    const totalSamples=len*numChannels;
-    const samples=new Int16Array(totalSamples);
+    const total=len*numChannels;
+    const s=new Int16Array(total);
+    const M=32767;
     for(let ch=0;ch<numChannels;ch++){
       const cd=audioBuf.getChannelData(ch);
-      for(let i=0;i<len;i++){const s=Math.max(-1,Math.min(1,cd[i]));samples[i*numChannels+ch]=s<0?s*32768:s*32767;}
+      let off=ch;
+      for(let i=0;i<len;i++){s[off]=cd[i]*M|0;off+=numChannels;}
     }
-    return{samples,sampleRate,numChannels};
+    return{samples:s,sampleRate,numChannels};
   }
   function encodeMp3(w,bitrate){
     const{samples,sampleRate,numChannels}=w;
