@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WAV→MP3 · 批量转换器</title>
+<title>音频→MP3 · 批量转换器</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{
@@ -150,23 +150,23 @@
     <li><a href="../index.html">主页</a></li>
     <li><a href="../demos.html">演示</a></li>
     <li><a href="index.html">工具</a></li>
-    <li><a href="wav2mp3.html" class="active">WAV→MP3</a></li>
+    <li><a href="wav2mp3.html" class="active">音频→MP3</a></li>
   </ul>
 </nav>
 <div class="container">
   <div class="tool-header">
     <div class="icon">🎵</div>
-    <h1><strong>WAV</strong> → MP3</h1>
-    <p>批量转换 · 纯前端处理 · 文件不上传服务器</p>
+    <h1><strong>WAV / M4A</strong> → MP3</h1>
+    <p>支持 WAV 和 M4A · 批量转换 · 纯前端处理 · 文件不上传服务器</p>
     <div class="divider"></div>
   </div>
   <div class="card">
     <div class="drop-zone" id="dropZone">
       <div class="drop-zone-icon">📁</div>
-      <div class="drop-zone-text">拖拽 WAV 文件到此处，或点击选择文件</div>
-      <div class="drop-zone-hint">支持批量选择，一次最多 50 个文件</div>
+      <div class="drop-zone-text">拖拽 WAV / M4A 文件到此处，或点击选择文件</div>
+      <div class="drop-zone-hint">支持批量选择 WAV 和 M4A 文件，一次最多 50 个</div>
     </div>
-    <input type="file" id="fileInput" accept=".wav,audio/wav" multiple>
+    <input type="file" id="fileInput" accept=".wav,audio/wav,.m4a,audio/mp4,audio/m4a,audio/x-m4a" multiple>
   </div>
   <div class="card">
     <div class="settings-row">
@@ -227,10 +227,13 @@
   dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.classList.remove('drag-over');handleFiles(Array.from(e.dataTransfer.files));});
   fileInput.addEventListener('change',()=>{handleFiles(Array.from(fileInput.files));fileInput.value='';});
   function handleFiles(incoming){
-    const wavs=incoming.filter(f=>f.name.toLowerCase().endsWith('.wav')&&f.size>44);
-    if(wavs.length===0){alert('请选择有效的 WAV 文件（至少 44 字节）。');return;}
-    if(files.length+wavs.length>50){alert('一次最多处理 50 个文件。');return;}
-    files=files.concat(wavs);
+    const audios=incoming.filter(f=>{
+      const n=f.name.toLowerCase();
+      return (n.endsWith('.wav')&&f.size>44)||n.endsWith('.m4a');
+    });
+    if(audios.length===0){alert('请选择有效的 WAV 或 M4A 音频文件。');return;}
+    if(files.length+audios.length>50){alert('一次最多处理 50 个文件。');return;}
+    files=files.concat(audios);
     renderFileList();
     btnConvert.disabled=false;
   }
@@ -264,10 +267,11 @@
       se.className='status status-converting';se.textContent='转换中...';
       try{
         const buf=await file.arrayBuffer();
-        const wav=decodeWav(buf);
-        const mp3=encodeMp3(wav,bitrate);
+        const isM4a=file.name.toLowerCase().endsWith('.m4a');
+        const pcm=isM4a?await decodeM4a(buf):decodeWav(buf);
+        const mp3=encodeMp3(pcm,bitrate);
         const blob=new Blob(mp3,{type:'audio/mpeg'});
-        const name=file.name.replace(/\.wav$/i,'')+'.mp3';
+        const name=file.name.replace(/\.(wav|m4a)$/i,'')+'.mp3';
         results.push({name,blob});
         se.className='status status-done';
         se.textContent='✅ '+(blob.size/1024).toFixed(0)+' KB';
@@ -287,6 +291,22 @@
   function decodeWav(buffer){
     const v=new DataView(buffer);
     return{samples:new Int16Array(buffer,44,(buffer.byteLength-44)/2),sampleRate:v.getUint32(24,true),numChannels:v.getUint16(22,true)};
+  }
+  let audioCtx=null;
+  function getAudioCtx(){if(!audioCtx)audioCtx=new AudioContext();return audioCtx;}
+  async function decodeM4a(buffer){
+    const ctx=getAudioCtx();
+    const audioBuf=await ctx.decodeAudioData(buffer.slice(0));
+    const numChannels=audioBuf.numberOfChannels;
+    const sampleRate=audioBuf.sampleRate;
+    const len=audioBuf.length;
+    const totalSamples=len*numChannels;
+    const samples=new Int16Array(totalSamples);
+    for(let ch=0;ch<numChannels;ch++){
+      const cd=audioBuf.getChannelData(ch);
+      for(let i=0;i<len;i++){const s=Math.max(-1,Math.min(1,cd[i]));samples[i*numChannels+ch]=s<0?s*32768:s*32767;}
+    }
+    return{samples,sampleRate,numChannels};
   }
   function encodeMp3(w,bitrate){
     const{samples,sampleRate,numChannels}=w;
