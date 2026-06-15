@@ -118,6 +118,8 @@
   .status-converting{color:#e67e22}
   .status-done{color:#2ecc71}
   .status-error{color:#e74c3c}
+  .file-progress-wrap{height:2px;background:rgba(255,255,255,0.04);border-radius:2px;margin-top:6px;overflow:hidden}
+  .file-progress{height:100%;background:linear-gradient(90deg,#e67e22,#f39c12);border-radius:2px;width:0%;transition:width 0.15s}
   .progress-bar-wrap{
     height:3px;background:rgba(255,255,255,0.06);border-radius:2px;
     margin-top:16px;overflow:hidden;
@@ -250,7 +252,7 @@
     let html='';
     files.forEach((f,i)=>{
       const size=f.size>1024*1024?(f.size/1024/1024).toFixed(1)+' MB':(f.size/1024).toFixed(0)+' KB';
-      html+='<div class="file-item" data-index="'+i+'"><span class="name">'+esc(f.name)+'</span><span class="size">'+size+'</span><span class="status status-pending" id="status-'+i+'">等待转换</span></div>';
+      html+='<div class="file-item" data-index="'+i+'"><span class="name">'+esc(f.name)+'</span><span class="size">'+size+'</span><span class="status status-pending" id="status-'+i+'">等待转换</span><div class="file-progress-wrap"><div class="file-progress" id="fp-'+i+'"></div></div></div>';
     });
     fileItems.innerHTML=html;
   }
@@ -262,7 +264,10 @@
       const buf=await file.arrayBuffer();
       const isM4a=file.name.toLowerCase().endsWith('.m4a');
       const pcm=isM4a?await decodeM4a(buf):decodeWav(buf);
-      const mp3=encodeMp3(pcm,bitrate);
+      const fp=document.getElementById('fp-'+i);
+      const enc=encodeMp3(pcm,bitrate,(p)=>{fp.style.width=(p*100)+'%';});
+      while(enc.hasMore()){enc.doBlock();await new Promise(r=>setTimeout(r,0));}
+      const mp3=enc.flush();fp.style.width='100%';
       const blob=new Blob(mp3,{type:'audio/mpeg'});
       const name=file.name.replace(/\.(wav|m4a)$/i,'')+'.mp3';
       results.push({name,blob});
@@ -324,19 +329,32 @@
     }
     return{samples:s,sampleRate,numChannels};
   }
-  function encodeMp3(w,bitrate){
+  function encodeMp3(w,bitrate,onProgress){
     const{samples,sampleRate,numChannels}=w;
     const enc=new lamejs.Mp3Encoder(numChannels,sampleRate,bitrate);
-    const data=[];const bs=1152;
-    if(numChannels===1){
-      for(let i=0;i<samples.length;i+=bs){const b=enc.encodeBuffer(samples.subarray(i,i+bs));if(b.length>0)data.push(new Uint8Array(b));}
-    }else{
-      const L=new Int16Array(samples.length/2);const R=new Int16Array(samples.length/2);
-      for(let i=0,j=0;i<samples.length;i+=2,j++){L[j]=samples[i];R[j]=samples[i+1];}
-      for(let i=0;i<L.length;i+=bs){const b=enc.encodeBuffer(L.subarray(i,i+bs),R.subarray(i,i+bs));if(b.length>0)data.push(new Uint8Array(b));}
+    const data=[];const bs=1152;const YIELD_EVERY=10;let blockCount=0;
+    const total=numChannels===1?samples.length:samples.length/2;
+    const totalBlocks=Math.ceil(total/bs);let doneBlocks=0;
+    function doBlock(){
+      if(numChannels===1){
+        for(let c=0;c<YIELD_EVERY&&blockCount*bs<samples.length;c++,blockCount++){
+          const b=enc.encodeBuffer(samples.subarray(blockCount*bs,blockCount*bs+bs));
+          if(b.length>0)data.push(new Uint8Array(b));doneBlocks++;
+        }
+      }else{
+        for(let c=0;c<YIELD_EVERY&&blockCount*bs<L.length;c++,blockCount++){
+          const b=enc.encodeBuffer(L.subarray(blockCount*bs,blockCount*bs+bs),R.subarray(blockCount*bs,blockCount*bs+bs));
+          if(b.length>0)data.push(new Uint8Array(b));doneBlocks++;
+        }
+      }
+      if(onProgress)onProgress(doneBlocks/totalBlocks);
+      return blockCount*bs<(numChannels===1?samples.length:L.length);
     }
-    const f=enc.flush();if(f.length>0)data.push(new Uint8Array(f));
-    return data;
+    if(numChannels!==1){
+      var L=new Int16Array(samples.length/2);var R=new Int16Array(samples.length/2);
+      for(let i=0,j=0;i<samples.length;i+=2,j++){L[j]=samples[i];R[j]=samples[i+1];}
+    }
+    return{hasMore:doBlock,flush:()=>{const f=enc.flush();if(f.length>0)data.push(new Uint8Array(f));return data;}};
   }
   async function downloadZip(results){
     const zip=new JSZip();
