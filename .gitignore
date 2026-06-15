@@ -1,6 +1,9 @@
 # Reasonix agent workspace config
 .reasonix/
 
+# Codegraph IDE cache
+.codegraph/
+
 # OS files
 .DS_Store
 Thumbs.db
