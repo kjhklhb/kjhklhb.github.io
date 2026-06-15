@@ -255,34 +255,48 @@
     fileItems.innerHTML=html;
   }
   function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  async function processOne(file,i,bitrate,results){
+    const se=document.getElementById('status-'+i);
+    se.className='status status-converting';se.textContent='转换中...';
+    try{
+      const buf=await file.arrayBuffer();
+      const isM4a=file.name.toLowerCase().endsWith('.m4a');
+      const pcm=isM4a?await decodeM4a(buf):decodeWav(buf);
+      const mp3=encodeMp3(pcm,bitrate);
+      const blob=new Blob(mp3,{type:'audio/mpeg'});
+      const name=file.name.replace(/\.(wav|m4a)$/i,'')+'.mp3';
+      results.push({name,blob});
+      se.className='status status-done';
+      se.textContent='✅ '+(blob.size/1024).toFixed(0)+' KB';
+    }catch(err){
+      console.error(err);
+      se.className='status status-error';se.textContent='❌ 失败';
+    }
+  }
   btnConvert.addEventListener('click',async()=>{
     if(files.length===0)return;
     btnConvert.disabled=true;btnClear.disabled=true;
     downloadAll.classList.remove('show');progressWrap.style.display='block';
     const bitrate=parseInt(qualitySlider.value);
     const results=[];let completed=0;
-    for(let i=0;i<files.length;i++){
-      const file=files[i];
-      const se=document.getElementById('status-'+i);
-      se.className='status status-converting';se.textContent='转换中...';
-      try{
-        const buf=await file.arrayBuffer();
-        const isM4a=file.name.toLowerCase().endsWith('.m4a');
-        const pcm=isM4a?await decodeM4a(buf):decodeWav(buf);
-        const mp3=encodeMp3(pcm,bitrate);
-        const blob=new Blob(mp3,{type:'audio/mpeg'});
-        const name=file.name.replace(/\.(wav|m4a)$/i,'')+'.mp3';
-        results.push({name,blob});
-        se.className='status status-done';
-        se.textContent='✅ '+(blob.size/1024).toFixed(0)+' KB';
-      }catch(err){
-        console.error(err);
-        se.className='status status-error';se.textContent='❌ 失败';
+    const CONCURRENCY=4;const resultsMap=[];
+    const queue=files.map((file,i)=>()=>processOne(file,i,bitrate,resultsMap));
+    async function runPool(){
+      let idx=0;
+      async function worker(){
+        while(idx<queue.length){
+          const taskIdx=idx++;const task=queue[taskIdx];
+          await task();
+          completed++;
+          progressBar.style.width=(completed/files.length*100)+'%';
+          overallProgress.textContent=completed+' / '+files.length+' 完成';
+        }
       }
-      completed++;
-      progressBar.style.width=(completed/files.length*100)+'%';
-      overallProgress.textContent=completed+' / '+files.length+' 完成';
+      const workers=[];for(let w=0;w<Math.min(CONCURRENCY,queue.length);w++)workers.push(worker());
+      await Promise.all(workers);
     }
+    await runPool();
+    results.push(...resultsMap);
     btnClear.disabled=false;
     progressBar.style.width='100%';
     overallProgress.textContent='全部完成！共 '+results.length+' 个文件';
