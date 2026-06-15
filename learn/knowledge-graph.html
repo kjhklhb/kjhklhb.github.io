@@ -73,41 +73,50 @@ nav{
 .info-bar p{font-size:0.65rem;letter-spacing:2px;color:rgba(255,255,255,0.1)}
 #modalOverlay{
   position:fixed;inset:0;z-index:10000;
-  background:rgba(0,0,0,0.7);backdrop-filter:blur(20px);
-  -webkit-backdrop-filter:blur(20px);
+  background:rgba(0,0,0,0.8);backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
   display:flex;align-items:center;justify-content:center;
   opacity:0;pointer-events:none;transition:opacity 0.4s ease;
 }
 #modalOverlay.show{opacity:1;pointer-events:auto}
 #modalContainer{
-  background:rgba(12,16,28,0.92);
+  background:rgba(12,16,28,0.96);
   border:1px solid rgba(255,255,255,0.06);
-  border-radius:20px;padding:36px 40px;
-  max-width:560px;width:90vw;max-height:75vh;overflow-y:auto;
-  box-shadow:0 40px 80px rgba(0,0,0,0.6);
-  transform:scale(0.92);transition:transform 0.35s ease;
+  border-radius:24px;
+  max-width:860px;width:92vw;max-height:82vh;overflow:hidden;
+  box-shadow:0 60px 120px rgba(0,0,0,0.8);
+  transform:scale(0.9);transition:transform 0.35s ease;
+  display:flex;flex-direction:row;
 }
 #modalOverlay.show #modalContainer{transform:scale(1)}
-#modalClose{float:right;background:none;border:none;color:rgba(255,255,255,0.2);font-size:1.8rem;cursor:pointer;transition:color 0.2s}
-#modalClose:hover{color:rgba(255,255,255,0.6)}
-#modalIcon{font-size:3rem;margin-bottom:8px}
-#modalTitle{font-size:1.6rem;font-weight:300;color:#fff;letter-spacing:2px;margin-bottom:4px}
-#modalSubtitle{font-size:0.85rem;color:rgba(255,255,255,0.3);margin-bottom:16px}
-.modal-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(77,200,120,0.15),transparent);margin:16px 0}
-#modalBody{font-size:0.9rem;line-height:1.8;color:rgba(255,255,255,0.5)}
-.modal-sub-topics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
-.modal-sub-item{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.04);border-radius:10px;padding:12px 14px}
-.modal-sub-item .label{font-weight:600;color:rgba(77,200,120,0.7);font-size:0.85rem}
-.modal-sub-item{font-size:0.78rem;color:rgba(255,255,255,0.35);line-height:1.5}
-@media(max-width:600px){
-  .title-overlay h1{font-size:0.9rem}
-  .legend{right:10px;padding:10px 8px;gap:5px}
-  .legend-item{font-size:0.5rem}
-  nav{padding:14px 16px}
-  .nav-links{gap:12px}
-  .nav-links a{font-size:0.65rem}
-  #modalContainer{padding:24px 20px}
-  .modal-sub-topics{grid-template-columns:1fr}
+#modalClose{
+  position:absolute;top:16px;right:16px;z-index:10;
+  width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,0.08);
+  background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.3);
+  font-size:16px;cursor:pointer;transition:all 0.25s;
+  display:flex;align-items:center;justify-content:center;
+}
+#modalClose:hover{background:rgba(255,255,255,0.12);color:#fff}
+#modalLeft{
+  width:200px;min-width:200px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:40px 20px;gap:16px;
+  background:linear-gradient(180deg,rgba(77,200,120,0.04),transparent);
+  border-right:1px solid rgba(255,255,255,0.03);flex-shrink:0;
+}
+#modalLeft .icon{font-size:4rem;line-height:1}
+#modalLeft .name{font-size:1.1rem;font-weight:600;color:#f0f4ff;text-align:center;letter-spacing:1px;line-height:1.4}
+#modalLeft .sub{font-size:0.75rem;color:rgba(255,255,255,0.25);text-align:center;letter-spacing:2px;text-transform:uppercase}
+#modalRight{flex:1;padding:36px 36px 36px 28px;overflow-y:auto}
+#modalBody{font-size:0.92rem;line-height:1.9;color:rgba(255,255,255,0.55)}
+#modalBody strong{color:rgba(255,255,255,0.85);font-weight:500}
+.modal-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(77,200,120,0.08),transparent);margin:12px 0 16px}
+@media(max-width:700px){
+  #modalContainer{flex-direction:column;max-height:90vh;width:95vw;border-radius:16px}
+  #modalLeft{width:100%;min-width:0;flex-direction:row;padding:20px 20px 12px;gap:12px;border-right:none;border-bottom:1px solid rgba(255,255,255,0.03)}
+  #modalLeft .icon{font-size:2.5rem}
+  #modalLeft .name{font-size:0.9rem}
+  #modalRight{padding:20px}
+  #modalClose{top:12px;right:12px}
 }
 </style>
 </head>
@@ -135,11 +144,15 @@ nav{
 <div class="info-bar"><p>点击知识点查看详情 · 拖拽 · 滚轮缩放</p></div>
 <div id="modalOverlay"><div id="modalContainer">
 <button id="modalClose">x</button>
-<div id="modalIcon"></div>
-<div id="modalTitle"></div>
-<div id="modalSubtitle"></div>
-<div class="modal-divider"></div>
-<div id="modalBody"></div>
+<div id="modalLeft">
+  <div class="icon" id="modalIcon"></div>
+  <div class="name" id="modalName"></div>
+  <div class="sub" id="modalSub"></div>
+</div>
+<div id="modalRight">
+  <div class="modal-divider"></div>
+  <div id="modalBody"></div>
+</div>
 </div></div>
 
 <script>
@@ -311,8 +324,8 @@ const detailData={c1:{icon:'🔬',title:'走进细胞',subtitle:'第一章',body
 const overlay=document.getElementById('modalOverlay');
 const closeBtn=document.getElementById('modalClose');
 const mIcon=document.getElementById('modalIcon');
-const mTitle=document.getElementById('modalTitle');
-const mSub=document.getElementById('modalSubtitle');
+const mTitle=document.getElementById('modalName');
+const mSub=document.getElementById('modalSub');
 const mBody=document.getElementById('modalBody');
 
 network.on('click',function(params){
