@@ -210,30 +210,32 @@ const edges=[
 ];
 
 const groupStyles={
-  c:{shape:'dot',color:'#4dc878',size:18,level:1},
-  o:{shape:'dot',color:'#6eb5ff',size:14,level:2},
-  d:{shape:'dot',color:'#c084fc',size:11,level:3},
-  p:{shape:'diamond',color:'#fbbf24',size:14,level:2},
-  s:{shape:'square',color:'#f472b6',size:13,level:2},
+  c:{shape:'dot',color:'#4dc878',border:'#6ae89a',size:22,level:1},
+  o:{shape:'dot',color:'#6eb5ff',border:'#8ec9ff',size:16,level:2},
+  d:{shape:'dot',color:'#c084fc',border:'#d4a0ff',size:13,level:3},
+  p:{shape:'diamond',color:'#fbbf24',border:'#fcd34d',size:17,level:2},
+  s:{shape:'square',color:'#f472b6',border:'#f9a8d4',size:16,level:2},
 };
 
 const container=document.getElementById('network-container');
 const data={
   nodes:new vis.DataSet(nodes.map(n=>({
-    ...n,borderWidth:1,borderWidthSelected:2.5,
-    font:{color:groupStyles[n.group].color,size:groupStyles[n.group].size,face:'Segoe UI,PingFang SC,Microsoft YaHei,sans-serif'},
-    color:{background:groupStyles[n.group].color,border:groupStyles[n.group].color,highlight:{background:groupStyles[n.group].color,border:'#fff'}},
+    ...n,borderWidth:2,borderWidthSelected:3,
+    font:{color:'#fff',size:groupStyles[n.group].size+2,face:'Segoe UI,PingFang SC,Microsoft YaHei,sans-serif',strokeWidth:2,strokeColor:'rgba(0,0,0,0.3)'},
+    color:{background:groupStyles[n.group].color,border:groupStyles[n.group].border,highlight:{background:groupStyles[n.group].color,border:'#fff'}},
+    shadow:{enabled:true,color:'rgba(0,0,0,0.4)',size:8,x:0,y:2},
     shape:groupStyles[n.group].shape,
-    size:n.size||15,
+    shapeProperties:{borderRadius:4},
+    size:(n.size||15)+2,
   }))),
   edges:new vis.DataSet(edges.map(e=>({
-    ...e,color:{color:'rgba(255,255,255,0.05)',highlight:'rgba(77,200,120,0.4)',hover:'rgba(77,200,120,0.25)'},
-    font:{color:'rgba(255,255,255,0.1)',size:0},width:0.3,hoverWidth:2,smooth:{type:'continuous'},
+    ...e,color:{color:'rgba(255,255,255,0.08)',highlight:'rgba(77,200,120,0.5)',hover:'rgba(77,200,120,0.35)',inherit:false},
+    font:{color:'rgba(255,255,255,0.1)',size:0},width:0.6,hoverWidth:3,smooth:{type:'continuous'},
   }))),
 };
 const options={
   autoResize:true,
-  physics:{solver:'forceAtlas2Based',forceAtlas2Based:{gravitationalConstant:-30,centralGravity:0.003,springLength:200,springConstant:0.012,damping:0.5},stabilization:{iterations:150,updateInterval:20},maxVelocity:35},
+  physics:{solver:'forceAtlas2Based',forceAtlas2Based:{gravitationalConstant:-30,centralGravity:0.003,springLength:200,springConstant:0.012,damping:0.5},stabilization:{iterations:100,updateInterval:15},maxVelocity:50},
   interaction:{hover:true,tooltipDelay:200,navigationButtons:false,keyboard:false},
   layout:{improvedLayout:true,randomSeed:42},
 };
