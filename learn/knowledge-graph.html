@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>生物知识图谱 · Biology Knowledge Graph</title>
-<script type="text/javascript" src="https://unpkg.com/vis-network@9.1.6/dist/vis-network.min.js"></script>
+<title>生物知识图谱</title>
+<script src="https://unpkg.com/vis-network@9.1.6/dist/vis-network.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden}
@@ -22,299 +22,267 @@ body::after{
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px}
-
+#particles-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
 #cursor-glow{
   position:fixed;width:500px;height:500px;border-radius:50%;
   background:radial-gradient(circle at center,rgba(77,200,120,0.04),transparent 70%);
   pointer-events:none;z-index:1;transform:translate(-50%,-50%);
 }
-
 nav{
   position:fixed;top:0;left:0;width:100%;z-index:1000;
   padding:20px 36px;display:flex;justify-content:space-between;
-  align-items:center;transition:background 0.4s;
-  background:rgba(8,10,16,0.6);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  border-bottom:1px solid rgba(255,255,255,0.03);
+  align-items:center;background:rgba(8,10,16,0.6);backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,0.03);
 }
 .nav-logo{font-size:1rem;font-weight:300;letter-spacing:4px;color:rgba(255,255,255,0.5)}
 .nav-logo span{color:rgba(77,200,120,0.5)}
 .nav-links{list-style:none;display:flex;gap:28px}
-.nav-links a{
-  color:rgba(255,255,255,0.35);text-decoration:none;font-size:0.78rem;
-  letter-spacing:2px;font-weight:400;text-transform:uppercase;
-  transition:color 0.3s;
-}
+.nav-links a{color:rgba(255,255,255,0.35);text-decoration:none;font-size:0.78rem;letter-spacing:2px;font-weight:400;text-transform:uppercase;transition:color 0.3s}
 .nav-links a:hover{color:rgba(255,255,255,0.7)}
 .nav-links a.active{color:rgba(77,200,120,0.7)}
-
-#network-container{
-  position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;
-}
-
+#network-container{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2}
 .title-overlay{
   position:fixed;top:80px;left:50%;transform:translateX(-50%);
   z-index:10;text-align:center;pointer-events:none;
 }
 .title-overlay h1{
-  font-size:1.4rem;font-weight:200;letter-spacing:6px;color:rgba(255,255,255,0.35);
-  text-shadow:0 0 60px rgba(0,0,0,0.8);
+  font-size:1.2rem;font-weight:200;letter-spacing:5px;color:rgba(255,255,255,0.25);
 }
 .title-overlay h1 strong{
   font-weight:700;
-  background:linear-gradient(135deg,rgba(77,200,120,0.6),rgba(100,220,180,0.6));
+  background:linear-gradient(135deg,rgba(77,200,120,0.5),rgba(100,220,180,0.5));
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
 }
-
-.info-panel{
-  position:fixed;bottom:36px;left:50%;transform:translateX(-50%);
-  z-index:10;pointer-events:none;text-align:center;
-}
-.info-panel p{
-  font-size:0.7rem;letter-spacing:2px;color:rgba(255,255,255,0.12);
-}
-
 .legend{
-  position:fixed;right:28px;top:50%;transform:translateY(-50%);
-  z-index:10;display:flex;flex-direction:column;gap:10px;
-  background:rgba(8,10,16,0.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  border:1px solid rgba(255,255,255,0.04);border-radius:12px;
-  padding:16px 14px;
+  position:fixed;right:24px;top:50%;transform:translateY(-50%);
+  z-index:10;display:flex;flex-direction:column;gap:8px;
+  background:rgba(8,10,16,0.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,0.03);border-radius:10px;padding:14px 12px;
 }
-.legend-item{display:flex;align-items:center;gap:8px;font-size:0.65rem;color:rgba(255,255,255,0.3);letter-spacing:1px;white-space:nowrap}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:0.6rem;color:rgba(255,255,255,0.25);letter-spacing:1px;white-space:nowrap}
 .legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.legend-dot.core{background:#4dc878;box-shadow:0 0 12px rgba(77,200,120,0.4)}
-.legend-dot.concept{background:#6eb5ff;box-shadow:0 0 8px rgba(110,181,255,0.3)}
-.legend-dot.detail{background:#c084fc;box-shadow:0 0 8px rgba(192,132,252,0.3)}
-.legend-dot.process{background:#fbbf24;box-shadow:0 0 8px rgba(251,191,36,0.3)}
-.legend-dot.structure{background:#f472b6;box-shadow:0 0 8px rgba(244,114,182,0.3)}
-
+.legend-dot.c{background:#4dc878;box-shadow:0 0 12px rgba(77,200,120,0.4)}
+.legend-dot.o{background:#6eb5ff;box-shadow:0 0 8px rgba(110,181,255,0.3)}
+.legend-dot.d{background:#c084fc;box-shadow:0 0 8px rgba(192,132,252,0.3)}
+.legend-dot.p{background:#fbbf24;box-shadow:0 0 8px rgba(251,191,36,0.3)}
+.legend-dot.s{background:#f472b6;box-shadow:0 0 8px rgba(244,114,182,0.3)}
+.info-bar{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+  z-index:10;text-align:center;pointer-events:none;
+}
+.info-bar p{font-size:0.65rem;letter-spacing:2px;color:rgba(255,255,255,0.1)}
+#modalOverlay{
+  position:fixed;inset:0;z-index:10000;
+  background:rgba(0,0,0,0.7);backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity 0.4s ease;
+}
+#modalOverlay.show{opacity:1;pointer-events:auto}
+#modalContainer{
+  background:rgba(12,16,28,0.92);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:20px;padding:36px 40px;
+  max-width:560px;width:90vw;max-height:75vh;overflow-y:auto;
+  box-shadow:0 40px 80px rgba(0,0,0,0.6);
+  transform:scale(0.92);transition:transform 0.35s ease;
+}
+#modalOverlay.show #modalContainer{transform:scale(1)}
+#modalClose{float:right;background:none;border:none;color:rgba(255,255,255,0.2);font-size:1.8rem;cursor:pointer;transition:color 0.2s}
+#modalClose:hover{color:rgba(255,255,255,0.6)}
+#modalIcon{font-size:3rem;margin-bottom:8px}
+#modalTitle{font-size:1.6rem;font-weight:300;color:#fff;letter-spacing:2px;margin-bottom:4px}
+#modalSubtitle{font-size:0.85rem;color:rgba(255,255,255,0.3);margin-bottom:16px}
+.modal-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(77,200,120,0.15),transparent);margin:16px 0}
+#modalBody{font-size:0.9rem;line-height:1.8;color:rgba(255,255,255,0.5)}
+.modal-sub-topics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.modal-sub-item{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.04);border-radius:10px;padding:12px 14px}
+.modal-sub-item .label{font-weight:600;color:rgba(77,200,120,0.7);font-size:0.85rem}
+.modal-sub-item{font-size:0.78rem;color:rgba(255,255,255,0.35);line-height:1.5}
 @media(max-width:600px){
-  .title-overlay h1{font-size:1rem;letter-spacing:3px}
-  .legend{right:12px;padding:10px 8px;gap:6px}
-  .legend-item{font-size:0.55rem}
+  .title-overlay h1{font-size:0.9rem}
+  .legend{right:10px;padding:10px 8px;gap:5px}
+  .legend-item{font-size:0.5rem}
   nav{padding:14px 16px}
-  .nav-logo{font-size:0.8rem}
   .nav-links{gap:12px}
-  .nav-links a{font-size:0.65rem;letter-spacing:1px}
+  .nav-links a{font-size:0.65rem}
+  #modalContainer{padding:24px 20px}
+  .modal-sub-topics{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
+<canvas id="particles-canvas"></canvas>
 <div id="cursor-glow"></div>
-
 <nav>
   <div class="nav-logo">Bio<span>·</span>Graph</div>
   <ul class="nav-links">
     <li><a href="../index.html">主页</a></li>
     <li><a href="../learn.html">学习</a></li>
+    <li><a href="knowledge-graph.html" class="active">图谱</a></li>
     <li><a href="biology1conclusion.pdf" target="_blank">PDF</a></li>
   </ul>
 </nav>
-
-<div class="title-overlay">
-  <h1><strong>生物必修一</strong> · 知识图谱</h1>
-</div>
-
+<div class="title-overlay"><h1><strong>生物必修一</strong> · 知识图谱</h1></div>
 <div id="network-container"></div>
-
 <div class="legend">
-  <div class="legend-item"><span class="legend-dot core"></span>核心主题</div>
-  <div class="legend-item"><span class="legend-dot concept"></span>基本概念</div>
-  <div class="legend-item"><span class="legend-dot detail"></span>细分知识</div>
-  <div class="legend-item"><span class="legend-dot process"></span>生理过程</div>
-  <div class="legend-item"><span class="legend-dot structure"></span>细胞结构</div>
+  <div class="legend-item"><span class="legend-dot c"></span>核心</div>
+  <div class="legend-item"><span class="legend-dot o"></span>概念</div>
+  <div class="legend-item"><span class="legend-dot d"></span>细节</div>
+  <div class="legend-item"><span class="legend-dot p"></span>过程</div>
+  <div class="legend-item"><span class="legend-dot s"></span>结构</div>
 </div>
-
-<div class="info-panel">
-  <p>拖拽节点 · 滚轮缩放 · 点击查看关联</p>
-</div>
+<div class="info-bar"><p>点击知识点查看详情 · 拖拽 · 滚轮缩放</p></div>
+<div id="modalOverlay"><div id="modalContainer">
+<button id="modalClose">x</button>
+<div id="modalIcon"></div>
+<div id="modalTitle"></div>
+<div id="modalSubtitle"></div>
+<div class="modal-divider"></div>
+<div id="modalBody"></div>
+</div></div>
 
 <script>
-const glow=document.getElementById('cursor-glow');
-let gx=-200,gy=-200,tx=-200,ty=-200;
-document.addEventListener('mousemove',e=>{tx=e.clientX;ty=e.clientY;});
-(function ani(){gx+=(tx-gx)*0.06;gy+=(ty-gy)*0.06;glow.style.left=gx+'px';glow.style.top=gy+'px';requestAnimationFrame(ani);})();
+const canvas=document.getElementById('particles-canvas'),ctx=canvas.getContext('2d');
+let W,H;
+function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+window.addEventListener('resize',resize);resize();
+const particles=[];
+for(let i=0;i<60;i++){particles.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-0.5)*0.3,vy:(Math.random()-0.5)*0.3,r:Math.random()*1.5+0.5})}
+function drawParticles(){
+  ctx.clearRect(0,0,W,H);
+  particles.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(77,200,120,${0.05+p.r*0.03})`;
+    ctx.fill();
+  });
+  for(let i=0;i<particles.length;i++){
+    for(let j=i+1;j<particles.length;j++){
+      const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if(d<150){ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);ctx.lineTo(particles[j].x,particles[j].y);
+        ctx.strokeStyle=`rgba(77,200,120,${0.008*(1-d/150)})`;ctx.lineWidth=0.3;ctx.stroke();}
+    }
+  }
+  requestAnimationFrame(drawParticles);
+}
+drawParticles();
 
-// ===== Knowledge Graph Data =====
-const nodes = [
-  { id:'cell', label:'细胞', group:'core', title:'生物学基本单位', size:30 },
-  { id:'cellTheory', label:'细胞学说', group:'concept', title:'一切生物体由细胞构成', size:18 },
-  { id:'cellTypes', label:'细胞类型', group:'concept', title:'原核细胞 vs 真核细胞', size:18 },
-  { id:'prokaryote', label:'原核细胞', group:'detail', title:'无核膜·无膜细胞器·拟核', size:12 },
-  { id:'eukaryote', label:'真核细胞', group:'detail', title:'有核膜·有膜细胞器', size:12 },
-  { id:'membrane', label:'细胞膜', group:'structure', title:'流动镶嵌模型·选择透过性', size:20 },
-  { id:'fluidMosaic', label:'流动镶嵌模型', group:'detail', title:'磷脂双分子层+蛋白质', size:12 },
-  { id:'transport', label:'物质跨膜运输', group:'process', title:'被动运输·主动运输·胞吞胞吐', size:20 },
-  { id:'passive', label:'被动运输', group:'detail', title:'自由扩散·协助扩散（不耗能）', size:12 },
-  { id:'active', label:'主动运输', group:'detail', title:'逆浓度梯度·需载体蛋白·耗能', size:12 },
-  { id:'endocytosis', label:'胞吞胞吐', group:'detail', title:'大分子物质进出细胞', size:12 },
-  { id:'organelles', label:'细胞器', group:'structure', title:'各种膜结构细胞器', size:18 },
-  { id:'mitochondria', label:'线粒体', group:'detail', title:'有氧呼吸主要场所·动力车间', size:12 },
-  { id:'chloroplast', label:'叶绿体', group:'detail', title:'光合作用场所', size:12 },
-  { id:'ribosome', label:'核糖体', group:'detail', title:'蛋白质合成场所·无膜', size:12 },
-  { id:'er', label:'内质网', group:'detail', title:'蛋白质加工和脂质合成', size:12 },
-  { id:'golgi', label:'高尔基体', group:'detail', title:'蛋白质加工·分类·包装', size:12 },
-  { id:'lysosome', label:'溶酶体', group:'detail', title:'细胞内消化', size:12 },
-  { id:'nucleus', label:'细胞核', group:'structure', title:'遗传信息库·细胞代谢控制中心', size:20 },
-  { id:'enzyme', label:'酶', group:'concept', title:'生物催化剂·大多数是蛋白质', size:18 },
-  { id:'enzymeMechanism', label:'酶的作用机理', group:'detail', title:'降低活化能·锁钥模型·诱导契合', size:12 },
-  { id:'enzymeProperties', label:'酶的特性', group:'detail', title:'高效性·专一性·作用条件温和', size:12 },
-  { id:'atp', label:'ATP', group:'concept', title:'腺苷三磷酸·直接能源物质', size:18 },
-  { id:'atpStructure', label:'ATP结构', group:'detail', title:'A-P~P~P·高能磷酸键', size:12 },
-  { id:'atpHydrolysis', label:'ATP水解', group:'detail', title:'ATP→ADP+Pi·放能', size:12 },
-  { id:'respiration', label:'细胞呼吸', group:'process', title:'有机物氧化分解·释放能量', size:22 },
-  { id:'aerobic', label:'有氧呼吸', group:'detail', title:'C₆H₁₂O₆+6O₂→6CO₂+6H₂O·大量ATP', size:14 },
-  { id:'anaerobic', label:'无氧呼吸', group:'detail', title:'C₆H₁₂O₆→2C₃H₆O₃(乳酸)·2ATP', size:14 },
-  { id:'glycolysis', label:'糖酵解', group:'detail', title:'细胞质基质·葡萄糖→丙酮酸', size:12 },
-  { id:'krebs', label:'三羧酸循环', group:'detail', title:'线粒体基质·产生CO₂和NADH', size:12 },
-  { id:'etc', label:'电子传递链', group:'detail', title:'线粒体内膜·大量ATP·需氧', size:12 },
-  { id:'photosynthesis', label:'光合作用', group:'process', title:'CO₂+H₂O→(CH₂O)+O₂·叶绿体', size:22 },
-  { id:'lightReaction', label:'光反应', group:'detail', title:'类囊体膜·光解水·产生ATP+NADPH', size:14 },
-  { id:'darkReaction', label:'暗反应(卡尔文循环)', group:'detail', title:'叶绿体基质·CO₂固定·C₃还原', size:14 },
-  { id:'cellCycle', label:'细胞周期', group:'concept', title:'分裂间期+分裂期', size:18 },
-  { id:'interphase', label:'分裂间期', group:'detail', title:'G₁→S(DNA复制)→G₂', size:12 },
-  { id:'mitosis', label:'有丝分裂', group:'process', title:'前中后末·染色体均分', size:18 },
-  { id:'prophase', label:'前期', group:'detail', title:'染色质→染色体·核膜消失', size:10 },
-  { id:'metaphase', label:'中期', group:'detail', title:'染色体排列赤道板', size:10 },
-  { id:'anaphase', label:'后期', group:'detail', title:'着丝粒分裂·染色体移向两极', size:10 },
-  { id:'telophase', label:'末期', group:'detail', title:'染色体→染色质·核膜重现', size:10 },
-  { id:'cytokinesis', label:'胞质分裂', group:'detail', title:'细胞质分裂成两个子细胞', size:10 },
+const nodes=[
+  {id:'cell',label:'细胞',group:'c',size:28,title:'生物体基本结构和功能单位'},
+  {id:'cellTheory',label:'细胞学说',group:'o',size:16,title:'施莱登·施旺·一切动植物由细胞构成'},
+  {id:'cellTypes',label:'细胞类型',group:'o',size:16},
+  {id:'prokaryote',label:'原核细胞',group:'d',size:12},{id:'eukaryote',label:'真核细胞',group:'d',size:12},
+  {id:'membrane',label:'细胞膜',group:'s',size:18},
+  {id:'transport',label:'物质跨膜运输',group:'p',size:20},
+  {id:'passive',label:'被动运输',group:'d',size:12},{id:'active',label:'主动运输',group:'d',size:12},{id:'endo',label:'胞吞胞吐',group:'d',size:12},
+  {id:'organelles',label:'细胞器',group:'s',size:18},
+  {id:'mito',label:'线粒体',group:'d',size:12},{id:'chloro',label:'叶绿体',group:'d',size:12},{id:'ribo',label:'核糖体',group:'d',size:12},{id:'er',label:'内质网',group:'d',size:12},{id:'golgi',label:'高尔基体',group:'d',size:12},{id:'lyso',label:'溶酶体',group:'d',size:12},
+  {id:'nucleus',label:'细胞核',group:'s',size:18},
+  {id:'enzyme',label:'酶',group:'o',size:16},
+  {id:'enzymeMech',label:'作用机理',group:'d',size:12},{id:'enzymeProp',label:'酶的特性',group:'d',size:12},
+  {id:'atp',label:'ATP',group:'o',size:16},
+  {id:'atpStruct',label:'ATP结构',group:'d',size:12},{id:'atpHydro',label:'ATP与ADP转化',group:'d',size:12},
+  {id:'respiration',label:'细胞呼吸',group:'p',size:22},
+  {id:'aerobic',label:'有氧呼吸',group:'d',size:14},{id:'anaerobic',label:'无氧呼吸',group:'d',size:14},
+  {id:'glycolysis',label:'糖酵解',group:'d',size:10},{id:'krebs',label:'三羧酸循环',group:'d',size:10},{id:'etc',label:'电子传递链',group:'d',size:10},
+  {id:'photosynthesis',label:'光合作用',group:'p',size:22},
+  {id:'lightRxn',label:'光反应',group:'d',size:12},{id:'darkRxn',label:'暗反应',group:'d',size:12},
+  {id:'cellCycle',label:'细胞周期',group:'o',size:16},
+  {id:'interphase',label:'分裂间期',group:'d',size:12},
+  {id:'mitosis',label:'有丝分裂',group:'p',size:20},
+  {id:'prophase',label:'前期',group:'d',size:10},{id:'metaphase',label:'中期',group:'d',size:10},{id:'anaphase',label:'后期',group:'d',size:10},{id:'telophase',label:'末期',group:'d',size:10},{id:'cytokinesis',label:'胞质分裂',group:'d',size:10},
+];
+const edges=[
+  {from:'cell',to:'cellTheory'},{from:'cell',to:'cellTypes'},{from:'cellTypes',to:'prokaryote'},{from:'cellTypes',to:'eukaryote'},
+  {from:'cell',to:'membrane'},{from:'membrane',to:'transport'},{from:'transport',to:'passive'},{from:'transport',to:'active'},{from:'transport',to:'endo'},
+  {from:'cell',to:'organelles'},{from:'organelles',to:'mito'},{from:'organelles',to:'chloro'},{from:'organelles',to:'ribo'},{from:'organelles',to:'er'},{from:'organelles',to:'golgi'},{from:'organelles',to:'lyso'},
+  {from:'cell',to:'nucleus'},{from:'cell',to:'enzyme'},{from:'enzyme',to:'enzymeMech'},{from:'enzyme',to:'enzymeProp'},
+  {from:'cell',to:'atp'},{from:'atp',to:'atpStruct'},{from:'atp',to:'atpHydro'},
+  {from:'atp',to:'respiration'},{from:'atp',to:'photosynthesis'},
+  {from:'respiration',to:'aerobic'},{from:'respiration',to:'anaerobic'},{from:'aerobic',to:'glycolysis'},{from:'aerobic',to:'krebs'},{from:'aerobic',to:'etc'},
+  {from:'photosynthesis',to:'lightRxn'},{from:'photosynthesis',to:'darkRxn'},
+  {from:'cell',to:'cellCycle'},{from:'cellCycle',to:'interphase'},{from:'cellCycle',to:'mitosis'},
+  {from:'mitosis',to:'prophase'},{from:'mitosis',to:'metaphase'},{from:'mitosis',to:'anaphase'},{from:'mitosis',to:'telophase'},{from:'mitosis',to:'cytokinesis'},
+  {from:'nucleus',to:'cellCycle'},{from:'chloro',to:'photosynthesis'},{from:'mito',to:'respiration'},
 ];
 
-const edges = [
-  { from:'cell', to:'cellTheory', label:'包含' },
-  { from:'cell', to:'cellTypes', label:'分为' },
-  { from:'cellTypes', to:'prokaryote', label:'包括' },
-  { from:'cellTypes', to:'eukaryote', label:'包括' },
-  { from:'cell', to:'membrane', label:'结构' },
-  { from:'membrane', to:'fluidMosaic', label:'模型' },
-  { from:'membrane', to:'transport', label:'功能' },
-  { from:'transport', to:'passive', label:'方式' },
-  { from:'transport', to:'active', label:'方式' },
-  { from:'transport', to:'endocytosis', label:'方式' },
-  { from:'cell', to:'organelles', label:'含有' },
-  { from:'organelles', to:'mitochondria', label:'包括' },
-  { from:'organelles', to:'chloroplast', label:'包括' },
-  { from:'organelles', to:'ribosome', label:'包括' },
-  { from:'organelles', to:'er', label:'包括' },
-  { from:'organelles', to:'golgi', label:'包括' },
-  { from:'organelles', to:'lysosome', label:'包括' },
-  { from:'cell', to:'nucleus', label:'控制中心' },
-  { from:'cell', to:'enzyme', label:'含' },
-  { from:'enzyme', to:'enzymeMechanism', label:'机理' },
-  { from:'enzyme', to:'enzymeProperties', label:'特性' },
-  { from:'cell', to:'atp', label:'能源' },
-  { from:'atp', to:'atpStructure', label:'结构' },
-  { from:'atp', to:'atpHydrolysis', label:'水解' },
-  { from:'atp', to:'respiration', label:'产生' },
-  { from:'atp', to:'photosynthesis', label:'产生' },
-  { from:'respiration', to:'aerobic', label:'类型' },
-  { from:'respiration', to:'anaerobic', label:'类型' },
-  { from:'aerobic', to:'glycolysis', label:'阶段1' },
-  { from:'aerobic', to:'krebs', label:'阶段2' },
-  { from:'aerobic', to:'etc', label:'阶段3' },
-  { from:'photosynthesis', to:'lightReaction', label:'阶段1' },
-  { from:'photosynthesis', to:'darkReaction', label:'阶段2' },
-  { from:'cell', to:'cellCycle', label:'增殖' },
-  { from:'cellCycle', to:'interphase', label:'包括' },
-  { from:'cellCycle', to:'mitosis', label:'包括' },
-  { from:'mitosis', to:'prophase', label:'分期' },
-  { from:'mitosis', to:'metaphase', label:'分期' },
-  { from:'mitosis', to:'anaphase', label:'分期' },
-  { from:'mitosis', to:'telophase', label:'分期' },
-  { from:'mitosis', to:'cytokinesis', label:'后续' },
-  { from:'nucleus', to:'cellCycle', label:'调控' },
-  { from:'nucleus', to:'organelles', label:'指令' },
-  { from:'chloroplast', to:'photosynthesis', label:'场所' },
-  { from:'mitochondria', to:'respiration', label:'场所' },
-];
-
-// ===== vis-network Configuration =====
-const container = document.getElementById('network-container');
-
-// Group styling
-const groups = {
-  core: { shape:'dot', color:{background:'#4dc878',border:'#4dc878',highlight:{background:'#6ae898',border:'#6ae898'}}, font:{color:'#4dc878',size:16} },
-  concept: { shape:'dot', color:{background:'#6eb5ff',border:'#6eb5ff',highlight:{background:'#8ec9ff',border:'#8ec9ff'}}, font:{color:'#6eb5ff',size:13} },
-  detail: { shape:'dot', color:{background:'#c084fc',border:'#c084fc',highlight:{background:'#d4a0ff',border:'#d4a0ff'}}, font:{color:'#c084fc',size:11} },
-  process: { shape:'diamond', color:{background:'#fbbf24',border:'#fbbf24',highlight:{background:'#fcd34d',border:'#fcd34d'}}, font:{color:'#fbbf24',size:14} },
-  structure: { shape:'square', color:{background:'#f472b6',border:'#f472b6',highlight:{background:'#f9a8d4',border:'#f9a8d4'}}, font:{color:'#f472b6',size:13} },
+const groupStyles={
+  c:{shape:'dot',color:'#4dc878',size:18,level:1},
+  o:{shape:'dot',color:'#6eb5ff',size:14,level:2},
+  d:{shape:'dot',color:'#c084fc',size:11,level:3},
+  p:{shape:'diamond',color:'#fbbf24',size:14,level:2},
+  s:{shape:'square',color:'#f472b6',size:13,level:2},
 };
 
-const data = {
-  nodes: new vis.DataSet(nodes.map(n => ({
-    ...n,
-    group: n.group,
-    borderWidth: 1,
-    borderWidthSelected: 2,
-    font: { ...groups[n.group].font, face:'Segoe UI,PingFang SC,Microsoft YaHei,sans-serif' },
-    color: {
-      background: groups[n.group].color.background,
-      border: groups[n.group].color.border,
-      highlight: groups[n.group].color.highlight,
-    },
-    size: n.size || 15,
-    shape: groups[n.group].shape,
+const container=document.getElementById('network-container');
+const data={
+  nodes:new vis.DataSet(nodes.map(n=>({
+    ...n,borderWidth:1,borderWidthSelected:2.5,
+    font:{color:groupStyles[n.group].color,size:groupStyles[n.group].size,face:'Segoe UI,PingFang SC,Microsoft YaHei,sans-serif'},
+    color:{background:groupStyles[n.group].color,border:groupStyles[n.group].color,highlight:{background:groupStyles[n.group].color,border:'#fff'}},
+    shape:groupStyles[n.group].shape,
+    size:n.size||15,
   }))),
-  edges: new vis.DataSet(edges.map(e => ({
-    ...e,
-    color: { color:'rgba(255,255,255,0.08)', highlight:'rgba(77,200,120,0.3)', hover:'rgba(77,200,120,0.2)' },
-    font: { color:'rgba(255,255,255,0.15)', size:9, strokeWidth:0, face:'Segoe UI,PingFang SC,sans-serif' },
-    width: 0.5,
-    hoverWidth: 1.5,
-    smooth: { type:'continuous' },
+  edges:new vis.DataSet(edges.map(e=>({
+    ...e,color:{color:'rgba(255,255,255,0.05)',highlight:'rgba(77,200,120,0.4)',hover:'rgba(77,200,120,0.25)'},
+    font:{color:'rgba(255,255,255,0.1)',size:0},width:0.3,hoverWidth:2,smooth:{type:'continuous'},
   }))),
 };
+const options={
+  autoResize:true,
+  physics:{solver:'forceAtlas2Based',forceAtlas2Based:{gravitationalConstant:-30,centralGravity:0.003,springLength:200,springConstant:0.012,damping:0.5},stabilization:{iterations:150,updateInterval:20},maxVelocity:35},
+  interaction:{hover:true,tooltipDelay:200,navigationButtons:false,keyboard:false},
+  layout:{improvedLayout:true,randomSeed:42},
+};
+const network=new vis.Network(container,data,options);
+network.once('stabilizationIterationsDone',()=>{network.setOptions({physics:false});});
 
-const options = {
-  autoResize: true,
-  physics: {
-    solver: 'forceAtlas2Based',
-    forceAtlas2Based: { gravitationalConstant:-40, centralGravity:0.005, springLength:180, springConstant:0.02, damping:0.4 },
-    stabilization: { iterations:200, updateInterval:25 },
-    maxVelocity: 50,
-  },
-  interaction: {
-    hover: true,
-    tooltipDelay: 200,
-    navigationButtons: false,
-    keyboard: false,
-  },
-  layout: { improvedLayout: true, randomSeed: 42 },
-  edges: { smooth: { type:'continuous' } },
-  nodes: { borderWidth: 1, borderWidthSelected: 2 },
+// Detail data for modal
+const detailData={
+  cell:{icon:'🧬',title:'细胞',subtitle:'生物体基本结构和功能单位',body:'细胞是生命活动的基本单位。一切动植物都由细胞发育而来，细胞学说由施莱登和施旺创立。',sub:[{label:'原核细胞',desc:'无核膜包被的细胞核，仅有拟核，如细菌、蓝藻'},{label:'真核细胞',desc:'有核膜包被的细胞核，有膜细胞器，如动植物、真菌'},{label:'细胞学说',desc:'细胞是一个有机体，新细胞由老细胞分裂产生'}]},
+  membrane:{icon:'🫧',title:'细胞膜',subtitle:'流动镶嵌模型·选择透过性',body:'细胞膜主要由磷脂双分子层和蛋白质构成，具有流动性和选择透过性。',sub:[{label:'被动运输',desc:'自由扩散和协助扩散，顺浓度梯度，不耗能'},{label:'主动运输',desc:'逆浓度梯度，需载体蛋白，消耗ATP'},{label:'胞吞胞吐',desc:'大分子物质通过膜泡运输进出细胞'}]},
+  organelles:{icon:'🔬',title:'细胞器',subtitle:'膜结构细胞器与无膜细胞器',body:'细胞器是悬浮在细胞质基质中的具有特定功能的结构。',sub:[{label:'线粒体',desc:'有氧呼吸主要场所，动力车间'},{label:'叶绿体',desc:'光合作用场所，只存在于植物细胞'},{label:'内质网',desc:'蛋白质加工和脂质合成'},{label:'高尔基体',desc:'蛋白质加工、分类、包装'},{label:'核糖体',desc:'蛋白质合成场所，无膜结构'},{label:'溶酶体',desc:'细胞内消化，含水解酶'}]},
+  nucleus:{icon:'🧠',title:'细胞核',subtitle:'遗传信息库·代谢控制中心',body:'细胞核是遗传信息库，是细胞代谢和遗传的控制中心。核膜、核仁、染色质是其重要结构。'},
+  enzyme:{icon:'⚡',title:'酶',subtitle:'生物催化剂·高效专一',body:'酶是活细胞产生的具有催化作用的有机物，绝大多数是蛋白质，少数是RNA。',sub:[{label:'作用机理',desc:'降低化学反应活化能，锁钥模型和诱导契合模型'},{label:'酶的特性',desc:'高效性：催化效率极高；专一性：每种酶只催化一种或一类反应；作用条件温和'}]},
+  atp:{icon:'🔋',title:'ATP',subtitle:'直接能源物质·ADP相互转化',body:'ATP是细胞内直接能源物质，结构简式为A-P~P~P，末端高能磷酸键水解释放能量。',sub:[{label:'ATP结构',desc:'由腺苷和三个磷酸基团组成，含两个高能磷酸键'},{label:'ATP与ADP转化',desc:'ATP→ADP+Pi放能，ADP+Pi→ATP吸能，循环转化'}]},
+  respiration:{icon:'🌬️',title:'细胞呼吸',subtitle:'有机物氧化分解释放能量',body:'细胞呼吸是指有机物在细胞内氧化分解，产生CO₂和水或乳酸，释放能量并生成ATP的过程。',sub:[{label:'有氧呼吸',desc:'C₆H₁₂O₆+6O₂→6CO₂+6H₂O+大量ATP，分三个阶段进行'},{label:'无氧呼吸',desc:'C₆H₁₂O₆→2C₃H₆O₃（乳酸）+少量ATP，或→2C₂H₅OH+2CO₂'},{label:'三个阶段',desc:'糖酵解（细胞质基质）、三羧酸循环（线粒体基质）、电子传递链（线粒体内膜）'}]},
+  photosynthesis:{icon:'☀️',title:'光合作用',subtitle:'CO₂+H₂O→(CH₂O)+O₂',body:'光合作用是指叶绿体利用光能将CO₂和H₂O转化为有机物并释放O₂的过程。',sub:[{label:'光反应',desc:'类囊体膜上发生，光解水产生O₂，合成ATP和NADPH'},{label:'暗反应',desc:'叶绿体基质中发生，CO₂固定→C₃还原，消耗ATP和NADPH'}]},
+  cellCycle:{icon:'🔄',title:'细胞周期',subtitle:'连续分裂的细胞才具有',body:'细胞周期是指连续分裂的细胞从一次分裂完成到下一次分裂完成所经历的整个过程。',sub:[{label:'分裂间期',desc:'G₁期（蛋白质合成）→S期（DNA复制）→G₂期（准备分裂）'},{label:'有丝分裂',desc:'将亲代细胞的染色体精确均分到两个子细胞中'}]},
+  mitosis:{icon:'🧫',title:'有丝分裂',subtitle:'染色体均分·维持遗传稳定',body:'有丝分裂保证了子细胞与母细胞遗传物质的一致性。',sub:[{label:'前期',desc:'染色质→染色体，核膜消失，纺锤体形成'},{label:'中期',desc:'染色体排列赤道板，数目最清晰'},{label:'后期',desc:'着丝粒分裂，姐妹染色单体分开，移向两极'},{label:'末期',desc:'染色体→染色质，核膜重现，纺锤体消失'},{label:'胞质分裂',desc:'细胞质分裂形成两个子细胞'}]},
 };
 
-const network = new vis.Network(container, data, options);
+const overlay=document.getElementById('modalOverlay');
+const closeBtn=document.getElementById('modalClose');
+const mIcon=document.getElementById('modalIcon');
+const mTitle=document.getElementById('modalTitle');
+const mSub=document.getElementById('modalSubtitle');
+const mBody=document.getElementById('modalBody');
 
-// Stabilization done → remove physics for smooth interaction
-network.once('stabilizationIterationsDone', () => {
-  network.setOptions({ physics: false });
-});
-
-// Click handler: show connected nodes
-network.on('click', function(params) {
-  if (params.nodes.length > 0) {
-    const nodeId = params.nodes[0];
-    const connected = network.getConnectedNodes(nodeId);
-    const allNodes = data.nodes.get().map(n => n.id);
-    const edges = network.getConnectedEdges(nodeId);
-    // Dim non-connected nodes
-    const highlightIds = new Set([nodeId, ...connected]);
-    allNodes.forEach(id => {
-      const domNode = document.getElementById(id);
-      if (domNode) {
-        domNode.style.opacity = highlightIds.has(id) ? '1' : '0.15';
+network.on('click',function(params){
+  if(params.nodes.length>0){
+    const id=params.nodes[0];
+    const info=detailData[id];
+    if(info){
+      mIcon.textContent=info.icon;
+      mTitle.textContent=info.title;
+      mSub.textContent=info.subtitle;
+      let subHtml='';
+      if(info.sub){
+        subHtml='<div class="modal-sub-topics">';
+        info.sub.forEach(s=>{subHtml+='<div class="modal-sub-item"><span class="label">'+s.label+'</span><br><span style="color:rgba(255,255,255,0.4);font-size:0.78rem">'+s.desc+'</span></div>';});
+        subHtml+='</div>';
       }
-    });
-  } else {
-    // Reset all
-    data.nodes.get().forEach(n => {
-      const domNode = document.getElementById(n.id);
-      if (domNode) domNode.style.opacity = '1';
-    });
+      mBody.innerHTML=info.body+subHtml;
+      overlay.classList.add('show');
+    }
   }
 });
+closeBtn.addEventListener('click',()=>overlay.classList.remove('show'));
+overlay.addEventListener('click',(e)=>{if(e.target===overlay)overlay.classList.remove('show');});
+document.addEventListener('keydown',(e)=>{if(e.key==='Escape')overlay.classList.remove('show');});
 </script>
 </body>
 </html>
