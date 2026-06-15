@@ -266,7 +266,7 @@
       const pcm=isM4a?await decodeM4a(buf):decodeWav(buf);
       const fp=document.getElementById('fp-'+i);
       const enc=encodeMp3(pcm,bitrate,(p)=>{fp.style.width=(p*100)+'%';});
-      while(enc.hasMore()){enc.doBlock();await new Promise(r=>setTimeout(r,0));}
+      while(enc.hasMore()){await new Promise(r=>setTimeout(r,0));}
       const mp3=enc.flush();fp.style.width='100%';
       const blob=new Blob(mp3,{type:'audio/mpeg'});
       const name=file.name.replace(/\.(wav|m4a)$/i,'')+'.mp3';
